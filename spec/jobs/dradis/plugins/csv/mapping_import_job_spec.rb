@@ -2,14 +2,11 @@ require 'rails_helper'
 
 RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
   let(:file) { File.expand_path('../../../.../../../fixtures/files/simple.csv', __dir__) }
-  let(:identifier) { '0' }
-
   let(:project) { create(:project) }
 
   let(:perform_job) do
     described_class.new.perform(
       file: file,
-      id_index: identifier,
       mappings: mappings,
       project_id: project.id,
       uid: 1
@@ -24,6 +21,7 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
 
       let(:mappings) do
         {
+          '0' => { 'type' => 'identifier' },
           '1' => { 'type' => 'issue', 'field' => 'MyTitle' },
           '3' => { 'type' => 'node', 'field' => '' },
           '4' => { 'type' => 'evidence', 'field' => 'MyLocation' },
@@ -48,10 +46,12 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
     context 'when project does not have RTP' do
       let(:mappings) do
         {
+          '0' => { 'type' => 'identifier' },
           '1' => { 'type' => 'issue', 'field' => 'MyTitle' },
           '3' => { 'type' => 'node', 'field' => '' },
           '4' => { 'type' => 'evidence', 'field' => 'MyLocation' },
-          '5' => { 'type' => 'evidence', 'field' => '' }
+          '5' => { 'type' => 'evidence', 'field' => '' },
+          '6' => { 'type' => 'issue', 'field' => '' }
         }
       end
 
@@ -59,7 +59,7 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
         perform_job
 
         issue = Issue.first
-        expect(issue.fields).to eq({ 'Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1' })
+        expect(issue.fields).to eq({ 'Title' => 'SQL Injection', 'VulnerabilityCategory' => 'High', 'plugin' => 'csv', 'plugin_id' => '1' })
 
         node = issue.affected.first
         expect(node.label).to eq('10.0.0.1')
@@ -67,11 +67,19 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
         evidence = node.evidence.first
         expect(evidence.fields).to eq({ 'Label' => '10.0.0.1', 'Location' => '10.0.0.1', 'Port' => '443', 'Title' => 'SQL Injection' })
       end
+
+      it 'strips out whitespace from column header' do
+        perform_job
+
+        issue = Issue.first
+        expect(issue.fields.keys).to include('VulnerabilityCategory')
+      end
     end
 
     context 'when mapping does not have a node type' do
       let(:mappings) do
         {
+          '0' => { 'type' => 'identifier' },
           '1' => { 'type' => 'issue' },
           '4' => { 'type' => 'evidence' }
         }
@@ -87,8 +95,6 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
     end
 
     context 'when no identifer is passed in' do
-      let(:identifier) { nil }
-
       let(:mappings) do
         {
           '1' => { 'type' => 'issue' },
@@ -103,6 +109,29 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
 
         expect(Node.count).to eq(0)
         expect(Evidence.count).to eq(0)
+      end
+    end
+
+    context 'when no evidence fields' do
+      let(:mappings) do
+        {
+          '0' => { 'type' => 'identifier' },
+          '1' => { 'type' => 'issue', 'field' => 'MyTitle' },
+          '3' => { 'type' => 'node', 'field' => '' }
+        }
+      end
+
+      it 'still creates evidence record' do
+        perform_job
+
+        issue = Issue.first
+        expect(issue.fields).to eq({ 'Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1' })
+
+        node = issue.affected.first
+        expect(node.label).to eq('10.0.0.1')
+
+        evidence = node.evidence.first
+        expect(evidence.content).to eq('')
       end
     end
   end

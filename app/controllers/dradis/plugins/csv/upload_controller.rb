@@ -6,7 +6,7 @@ module Dradis::Plugins::CSV
     before_action :load_csv_headers, only: [:new]
 
     def new
-      @default_columns = ['Unique Identifier', 'Column Header From File', 'Type', 'Field in Dradis']
+      @default_columns = ['Column Header From File', 'Type', 'Field in Dradis']
 
       @log_uid = Log.new.uid
     end
@@ -16,13 +16,12 @@ module Dradis::Plugins::CSV
 
       MappingImportJob.perform_later(
         file: @attachment.fullpath.to_s,
-        id_index: params[:identifier],
         mappings: mappings_params[:field_attributes].to_h,
         project_id: current_project.id,
         uid: params[:log_uid].to_i
       )
 
-      Resque.redis.del(params[:job_id])
+      Resque.redis.del(Importer::REDIS_PREFIX + params[:job_id])
     end
 
     private
@@ -40,14 +39,12 @@ module Dradis::Plugins::CSV
     end
 
     def load_attachment
-      job_id = params[:job_id].to_i
-      filename = Resque.redis.get(job_id)
-
-      unless filename
-        return redirect_to main_app.project_upload_manager_path
+      if Integer(params[:job_id], exception: false) && Resque.redis.get(Importer::REDIS_PREFIX + params[:job_id]).present?
+        filename = Resque.redis.get(Importer::REDIS_PREFIX + params[:job_id])
+        @attachment = Attachment.find(filename, conditions: { node_id: current_project.plugin_uploads_node.id })
+      else
+        redirect_to main_app.project_upload_path, alert: 'Something fishy is going on...'
       end
-
-      @attachment = Attachment.find(filename, conditions: { node_id: current_project.plugin_uploads_node.id })
     end
 
     def mappings_params
