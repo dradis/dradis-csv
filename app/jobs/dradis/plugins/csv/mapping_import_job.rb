@@ -80,7 +80,7 @@ module Dradis::Plugins::CSV
       mappings.map do |index, mapping|
         next if @project.report_template_properties && mapping['field'].blank?
 
-        field_name = @project.report_template_properties ? mapping['field'] : row.headers[index.to_i]
+        field_name = @project.report_template_properties ? mapping['field'] : row.headers[index.to_i].delete(" \t\r\n")
         field_value = row[index.to_i]
         "#[#{field_name}]#\n#{field_value}"
       end.compact.join("\n\n")

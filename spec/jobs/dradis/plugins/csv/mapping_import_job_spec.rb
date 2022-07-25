@@ -51,7 +51,8 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
           '1' => { 'type' => 'issue', 'field' => 'MyTitle' },
           '3' => { 'type' => 'node', 'field' => '' },
           '4' => { 'type' => 'evidence', 'field' => 'MyLocation' },
-          '5' => { 'type' => 'evidence', 'field' => '' }
+          '5' => { 'type' => 'evidence', 'field' => '' },
+          '6' => { 'type' => 'issue', 'field' => '' }
         }
       end
 
@@ -59,13 +60,20 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
         perform_job
 
         issue = Issue.first
-        expect(issue.fields).to eq({ 'Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1' })
+        expect(issue.fields).to eq({ 'Title' => 'SQL Injection', 'VulnerabilityCategory' => 'High', 'plugin' => 'csv', 'plugin_id' => '1' })
 
         node = issue.affected.first
         expect(node.label).to eq('10.0.0.1')
 
         evidence = node.evidence.first
         expect(evidence.fields).to eq({ 'Label' => '10.0.0.1', 'Location' => '10.0.0.1', 'Port' => '443', 'Title' => 'SQL Injection' })
+      end
+
+      it 'strips out whitespace from column header' do
+        perform_job
+
+        issue = Issue.first
+        expect(issue.fields.keys).to include('VulnerabilityCategory')
       end
     end
 
