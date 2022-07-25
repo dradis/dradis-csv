@@ -33,7 +33,7 @@
                 <td><%= header %></td>
                 <td>
                   <div class="form-group m-0">
-                    <%= f.select "mappings[#{index}][type]", [['Issue Field', 'issue'], ['Issue Identifier', 'identifier'], ['Evidence Field', 'evidence'], ['Node Label', 'node']], {}, class: 'form-control custom-select w-75', data: { behavior: 'type-select' } %>
+                    <%= f.select "mappings[#{index}][type]", [['Issue Field', 'issue'], ['Issue ID', 'identifier'], ['Evidence Field', 'evidence'], ['Node Label', 'node']], {}, class: 'form-control custom-select w-75', data: { behavior: 'type-select' } %>
                   </div>
                 </td>
                 <td>
