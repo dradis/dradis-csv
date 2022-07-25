@@ -14,7 +14,7 @@
 <div class="content-container">
   <div data-behavior="validation-messages">
     <div class="alert alert-danger d-none" data-behavior="issue-id-validation-message">
-      An Issue Identifier must be selected.
+      An Issue ID must be selected.
     </div>
 
     <div class="alert alert-danger d-none" data-behavior="node-type-validation-message">
@@ -46,13 +46,13 @@
             <td><%= header %></td>
             <td>
               <div class="form-group m-0">
-                <%= f.select "mappings[field_attributes][#{index}][type]", [['Issue Field', 'issue'], ['Issue Identifier', 'identifier'], ['Evidence Field', 'evidence'], ['Node Label', 'node']], {}, class: 'form-control custom-select w-75', data: { behavior: 'type-select' } %>
+                <%= f.select "mappings[field_attributes][#{index}][type]", [['Issue Field', 'issue'], ['Issue ID', 'identifier'], ['Evidence Field', 'evidence'], ['Node Label', 'node']], {}, class: 'form-control custom-select w-75', data: { behavior: 'type-select' } %>
               </div>
             </td>
             <td>
               <% if current_project.report_template_properties %>
                 <div class="form-group m-0">
-                  <%= f.text_field "mappings[field_attributes][#{index}][field]", class: 'form-control' %>
+                  <%= f.text_field "mappings[#{index}][field]", class: 'form-control' %>
                 </div>
               <% else %>
                 <span data-behavior="default-field-label"><%= header %></span>

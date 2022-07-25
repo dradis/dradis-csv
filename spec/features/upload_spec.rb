@@ -43,7 +43,7 @@ describe 'upload feature', js: true do
           end
 
           click_button 'Import CSV'
-          expect(page).to have_text('An Issue Identifier must be selected.')
+          expect(page).to have_text('An Issue ID must be selected.')
         end
       end
 
