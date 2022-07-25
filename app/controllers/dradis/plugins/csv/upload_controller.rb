@@ -3,10 +3,12 @@ module Dradis::Plugins::CSV
     include ProjectScoped
 
     def new
-      job_id = params[:job_id].to_i
-      filename = Resque.redis.get(job_id)
-
-      @attachment = Attachment.find(filename, conditions: { node_id: current_project.plugin_uploads_node.id })
+      if Integer(params[:job_id], exception: false)
+        filename = Resque.redis.get(Importer::REDIS_PREFIX + params[:job_id])
+        @attachment = Attachment.find(filename, conditions: { node_id: current_project.plugin_uploads_node.id })
+      else
+        redirect_to main_app.project_upload_path, alert: 'Something fishy is going on...'
+      end
     end
   end
 end
