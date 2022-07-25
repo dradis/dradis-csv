@@ -1,1 +1,1 @@
-//= require dradis/plugins/csv/upload.js
+//= require dradis/plugins/csv/upload

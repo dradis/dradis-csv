@@ -1,0 +1,21 @@
+body.upload.new {
+  .dataTables_footer_content {
+    display: none;
+  }
+
+  .form-actions {
+    margin-top: 0;
+  }
+
+  .table {
+    margin-bottom: 0 !important;
+    
+    td {
+      vertical-align: middle;
+    }
+  }
+
+  .table-wrapper {
+    max-height: 100%;
+  }
+}

@@ -12,70 +12,56 @@
 <% end %>
 
 <div class="content-container">
-  <%= "Uploaded file: #{@attachment.filename}" %>
-
-  <table class="table table-striped mb-0"
-    data-behavior="dradis-datatable"
-    data-item-name="csv_item"
-    data-local-storage-key="project.ce.<%= dom_id(current_project) %>.csv_mapping_datatable"
-  >
-    <thead>
-      <tr>
-        <th class="no-sort">Unique Indentifier</th>
-        <th>Column Header From File</th>
-        <th>Type</th>
-        <th>Field in Dradis</th>
-        <%# if RTP && RTP has fields defined %>
-          <th>Validation</th>
-        <%# end %>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="unique_indentifiers" id="unique_indentifier_0" value="0" checked>
-            <label class="form-check-label" for="unique_indentifier_0"><span class="sr-only">Select</span></label>
-          </div>
-        </td>
-        <td>**COLUMN NAME GOES HERE**</td>
-        <td>
-          <div class="form-group m-0">
-            <select class="form-control custom-select" id="type_0">
-              <option selected>Issue</option>
-              <option>Evidence</option>
-              <option>Node</option>
-            </select>
-            <label for="type_0" class="sr-only">Type</label>
-          </div>
-        </td>
-        <%# if RTP && RTP has fields defined %>
-          <td>
-            <div class="form-group m-0">
-              <select class="form-control custom-select" id="field_0">
-                <option disabled selected>Select a Field</option>
-                <option>Field form RTP</option>
-                <option>Another from RTP</option>
-                <option disabled>&#9472;</option>
-                <option>Create **COLUMN NAME GOES HERE** field</option>
-                <option>Do not import this column</option>
-              </select>
-              <label for="field_0" class="sr-only">Field in Dradis</label>
-            </div>
-          </td>
-          <td>
-            <div class="validation">
-              <%# if error %>
-                <i class="fa fa-times fa-fw ml-4" data-toggle="tooltip" data-original-title="Error message goes here"></i>
-              <%# else %>
-                <%# <i class="fa fa-check fa-fw ml-4" data-toggle="tooltip" data-original-title="Validation passed!"></i> %>
-              <%# end %>
-            </div>
-          </td>
-        <%# else %>
-          <%# <td>**COLUMN NAME GOES HERE**</td> %>
-        <%# end %>
-      </tr>
-    </tbody>
-  </table>
+  <%= form_with url: project_upload_index_path(current_project), method: :post do |f| %>
+    <table class="table table-striped mb-0"
+      data-behavior="dradis-datatable"
+      data-column-toggle="false"
+      data-default-columns="<%= @default_columns %>"
+      data-item-name="csv_item"
+      data-paging="false"
+    >
+      <thead>
+        <tr>
+          <th class="no-sort">Unique Identifier <i class="fa fa-question-circle" data-toggle="tooltip" title="Ensure duplicate issues with this value are not created."></i></th>
+          <th>Column Header From File</th>
+          <th class="no-sort">Type</th>
+          <th>Field in Dradis</th>
+        </tr>
+      </thead>
+          <tbody>
+            <% @headers.each_with_index do |header, index| %>
+              <tr>
+                <td>
+                  <div class="form-check">
+                    <%= f.radio_button 'identifier', index, class: 'form-check-input' %>
+                    <%= f.label :identifier, class: 'form-check-label' do %>
+                      <span class="sr-only">Select</span>
+                    <% end %>
+                  </div>
+                </td>
+                <td><%= header %></td>
+                <td>
+                  <div class="form-group m-0">
+                    <%= f.select "mappings[#{index}][type]", [['Issue Field', 'issue'], ['Evidence Field', 'evidence'], ['Node Label', 'node']], {}, class: 'form-control custom-select w-75', data: { behavior: 'type-select' } %>
+                  </div>
+                </td>
+                <td>
+                  <% if current_project.report_template_properties %>
+                    <div class="form-group m-0">
+                      <%= f.text_field "mappings[#{index}][field]", class: 'form-control' %>
+                    </div>
+                  <% else %>
+                    <span data-behavior="default-field-label"><%= header %></span>
+                    <span data-behavior="na-field-label" class="d-none">N/A</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+        </tbody>
+    </table>
+    <div class="form-actions">
+      <%= f.submit 'Import CSV', class: 'btn btn-primary mr-1' %> or
+      <%= link_to 'Cancel', main_app.project_upload_manager_path(current_project) %>
+    </div>
+  <% end %>
 </div>
