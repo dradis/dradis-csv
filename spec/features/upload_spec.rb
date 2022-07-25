@@ -38,19 +38,22 @@ describe 'upload feature', js: true do
     context 'mapping CSV columns' do
       context 'when identifier not selected' do
         it 'shows a validation message on the page' do
-          click_button 'Import CSV'
+          within all('tbody tr')[3] do
+            select 'Evidence Field'
+          end
 
-          message = page.find('#identifier_0').native.attribute('validationMessage')
-          expect(message).to eq('Please select one of these options.')
+          click_button 'Import CSV'
+          expect(page).to have_text('An Issue Identifier must be selected.')
         end
       end
 
       context 'when there are evidence type but no node type selected' do
         it 'shows a validation message on the page' do
-          # Select identifer column
-          find('#identifier_0').click
+          within all('tbody tr')[2] do
+            select 'Issue Identifier'
+          end
 
-          within all('tbody tr')[4] do
+          within all('tbody tr')[3] do
             select 'Evidence Field'
           end
 
@@ -61,18 +64,19 @@ describe 'upload feature', js: true do
 
       context 'when project does not have RTP' do
         it 'imports all columns as fields' do
-          # Select identifer column
-          find('#identifier_0').click
-
-          within all('tbody tr')[3] do
+          within all('tbody tr')[1] do
             select 'Node Label'
           end
 
-          within all('tbody tr')[4] do
+          within all('tbody tr')[2] do
+            select 'Issue Identifier'
+          end
+
+          within all('tbody tr')[3] do
             select 'Evidence Field'
           end
 
-          within all('tbody tr')[5] do
+          within all('tbody tr')[4] do
             select 'Evidence Field'
           end
 
@@ -84,7 +88,7 @@ describe 'upload feature', js: true do
             expect(page).to have_text('Worker process completed.')
 
             issue = Issue.last
-            expect(issue.fields).to eq({ 'Description' => 'Test CSV', "Id" => '1', 'Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1' })
+            expect(issue.fields).to eq({ 'Description' => 'Test CSV', 'Title' => 'SQL Injection', 'VulnerabilityCategory' =>'High', 'plugin' => 'csv', 'plugin_id' => '1' })
 
             node = issue.affected.first
             expect(node.label).to eq('10.0.0.1')
@@ -104,21 +108,22 @@ describe 'upload feature', js: true do
           # Refresh to show text inputs
           page.refresh
 
-          # Select identifer column
-          find('#identifier_0').click
-
           within all('tbody tr')[1] do
-            select 'Issue Field'
-            find('input[type="text"]').fill_in(with: 'MyTitle')
-          end
-
-          within all('tbody tr')[3] do
             select 'Node Label'
           end
 
-          within all('tbody tr')[4] do
+          within all('tbody tr')[2] do
+            select 'Issue Identifier'
+          end
+
+          within all('tbody tr')[3] do
             select 'Evidence Field'
             find('input[type="text"]').fill_in(with: 'MyLocation')
+          end
+
+          within all('tbody tr')[5] do
+            select 'Issue Field'
+            find('input[type="text"]').fill_in(with: 'MyTitle')
           end
 
           perform_enqueued_jobs do
@@ -144,16 +149,17 @@ describe 'upload feature', js: true do
             # Refresh to show text inputs
             page.refresh
 
-            # Select identifer column
-            find('#identifier_0').click
-
             within all('tbody tr')[1] do
-              select 'Issue Field'
-              find('input[type="text"]').fill_in(with: 'MyTitle')
+              select 'Node Label'
             end
 
-            within all('tbody tr')[3] do
-              select 'Node Label'
+            within all('tbody tr')[2] do
+              select 'Issue Identifier'
+            end
+
+            within all('tbody tr')[5] do
+              select 'Issue Field'
+              find('input[type="text"]').fill_in(with: 'MyTitle')
             end
 
             perform_enqueued_jobs do

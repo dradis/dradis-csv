@@ -12,8 +12,14 @@
 <% end %>
 
 <div class="content-container">
-  <div class="alert alert-danger d-none" data-behavior="node-type-validation-message">
-    A Node Label Type must be selected to import evidence records.
+  <div data-behavior="validation-messages">
+    <div class="alert alert-danger d-none" data-behavior="issue-id-validation-message">
+      An Issue Identifier must be selected.
+    </div>
+
+    <div class="alert alert-danger d-none" data-behavior="node-type-validation-message">
+      A Node Label Type must be selected to import evidence records.
+    </div>
   </div>
 
   <%= form_with url: project_upload_index_path(current_project, format: :js), method: :post, data: { behavior: 'mapping-form' } do |f| %>

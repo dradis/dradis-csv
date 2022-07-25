@@ -3,36 +3,37 @@ module Dradis::Plugins::CSV
     queue_as :dradis_project
 
     # mappings hash:
-    # The key is the column index, while the value is a hash containing the type of resource (evidence/issue/node).
+    # The key is the column index, while the value is a hash containing the type of resource (evidence/identifier/issue/node).
     # It's used to map a CSV header to a field in Dradis (only for evidence and issues).
     #
     # e.g.
     # {
     #   '0' => { 'type' => 'node' },
     #   '1' => { 'type' => 'issue', 'field' => 'Title' },
-    #   '2' => { 'type' => 'evidence', 'field' => 'Port' }
+    #   '2' => { 'type' => 'identifier' },
+    #   '3' => { 'type' => 'evidence', 'field' => 'Port' }
     # }
-    def perform(file:, id_index:, mappings:, project_id:, uid:)
+    def perform(file:, mappings:, project_id:, uid:)
       @logger = Log.new(uid: uid)
       @logger.write { "Job id is #{job_id}." }
       @logger.write { 'Worker process starting background task.' }
 
-      unless id_index
+      # Converts mapping hash into groups of arrays
+      # {
+      #   'node' => [['0', { 'type' => 'node' }]],
+      #   'identifier' => [['2', { 'type' => 'identifier' }]]
+      # }
+      @mappings_groups = mappings.group_by { |index, mapping| mapping['type'] }
+      @id_index = Integer(@mappings_groups['identifier']&.first&.first, exception: false)
+
+      unless @id_index
         @logger.fatal('Unique Identifier doesn\'t exist, please choose a column as the Unique Identifier.')
         return
       end
 
+      @id_index = @id_index.to_i
       @file = file
-      @id_index = id_index.to_i
-      @mappings = mappings
       @project = Project.find(project_id)
-
-      # Hash#find converts a hash into an array,
-      # e.g. { '0' => { 'type' => 'node' } } to # ['0', { 'type' => 'node' }].
-      @node_index =
-        if node_mapping = @mappings.find { |index, field| field['type'] == 'node' }
-          node_mapping.first.to_i
-        end
 
       import_csv!
 
@@ -49,8 +50,9 @@ module Dradis::Plugins::CSV
     end
 
     def import_csv!
-      @issue_mappings = @mappings.select { |index, mapping| mapping['type'] == 'issue' }
-      @evidence_mappings = @mappings.select { |index, mapping| mapping['type'] == 'evidence' }
+      @node_index = Integer(@mappings_groups['node']&.first&.first, exception: false)
+      @issue_mappings = @mappings_groups['issue'] || []
+      @evidence_mappings = @mappings_groups['evidence'] || []
 
       CSV.foreach(@file, headers: true) do |row|
         process_row(row)

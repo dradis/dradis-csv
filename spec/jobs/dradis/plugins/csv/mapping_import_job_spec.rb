@@ -2,14 +2,11 @@ require 'rails_helper'
 
 RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
   let(:file) { File.expand_path('../../../.../../../fixtures/files/simple.csv', __dir__) }
-  let(:identifier) { '0' }
-
   let(:project) { create(:project) }
 
   let(:perform_job) do
     described_class.new.perform(
       file: file,
-      id_index: identifier,
       mappings: mappings,
       project_id: project.id,
       uid: 1
@@ -24,6 +21,7 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
 
       let(:mappings) do
         {
+          '0' => { 'type' => 'identifier' },
           '1' => { 'type' => 'issue', 'field' => 'MyTitle' },
           '3' => { 'type' => 'node', 'field' => '' },
           '4' => { 'type' => 'evidence', 'field' => 'MyLocation' },
@@ -48,6 +46,7 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
     context 'when project does not have RTP' do
       let(:mappings) do
         {
+          '0' => { 'type' => 'identifier' },
           '1' => { 'type' => 'issue', 'field' => 'MyTitle' },
           '3' => { 'type' => 'node', 'field' => '' },
           '4' => { 'type' => 'evidence', 'field' => 'MyLocation' },
@@ -80,6 +79,7 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
     context 'when mapping does not have a node type' do
       let(:mappings) do
         {
+          '0' => { 'type' => 'identifier' },
           '1' => { 'type' => 'issue' },
           '4' => { 'type' => 'evidence' }
         }
@@ -95,8 +95,6 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
     end
 
     context 'when no identifer is passed in' do
-      let(:identifier) { nil }
-
       let(:mappings) do
         {
           '1' => { 'type' => 'issue' },
@@ -117,6 +115,7 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
     context 'when no evidence fields' do
       let(:mappings) do
         {
+          '0' => { 'type' => 'identifier' },
           '1' => { 'type' => 'issue', 'field' => 'MyTitle' },
           '3' => { 'type' => 'node', 'field' => '' }
         }
