@@ -7,7 +7,7 @@ window.addEventListener('job-done', function(e){
       var path = window.location.pathname;
       var project_path = path.split('/').slice(0, -1).join('/');
 
-      var redirectPath  = project_path + '/csv/upload/new?job_id=' + jobId;
+      var redirectPath  = project_path + '/addons/csv/upload/new?job_id=' + jobId;
       Turbolinks.visit(redirectPath);
     }
   }
@@ -53,13 +53,13 @@ document.addEventListener('turbolinks:load', function() {
     });
 
     $('[data-behavior~=mapping-form]').submit(function() {
-      var valid = _validateNodeSelected();
+      var valid = _validateIdentifierSelected() && _validateNodeSelected();
 
       if (!valid) {
         $(this).find('input[type="submit"]').attr('disabled', false).val('Import CSV');
 
         $('[data-behavior~=view-content]').animate({
-          scrollTop: $('[data-behavior~=node-type-validation-message]').scrollTop()
+          scrollTop: $('[data-behavior~=validation-messages]').scrollTop()
         });
       }
 
@@ -92,7 +92,7 @@ document.addEventListener('turbolinks:load', function() {
                 $('<option disabled="disabled" selected></option>').attr('value', header).text(header)
               );
           }
-        } else if ($select.val()== 'node') { 
+        } else if ($select.val()== 'node') {
           $fieldSelect
             .attr('disabled', 'disabled')
             .html(
@@ -145,6 +145,21 @@ document.addEventListener('turbolinks:load', function() {
 
       var valid =  selectedEvidenceCount == 0 ||
                    (selectedEvidenceCount > 0 && selectedNodeCount > 0);
+
+      if (!valid) {
+        $validationMessage.removeClass('d-none');
+      }
+
+      return valid;
+    }
+
+    function _validateIdentifierSelected() {
+      var $validationMessage = $('[data-behavior~=issue-id-validation-message]');
+      $validationMessage.addClass('d-none');
+
+      var selectedIdentifierCount = $('select option[value="identifier"]:selected').length;
+
+      var valid = selectedIdentifierCount == 1;
 
       if (!valid) {
         $validationMessage.removeClass('d-none');

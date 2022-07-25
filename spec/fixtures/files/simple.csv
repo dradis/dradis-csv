@@ -1,2 +1,2 @@
-"Id","Title","Description","Host","Location","Port"
-"1","SQL Injection","Test CSV","10.0.0.1","10.0.0.1","443"
+"Id","Title","Description","Host","Location","Port","Vulnerability Category"
+"1","SQL Injection","Test CSV","10.0.0.1","10.0.0.1","443","High"

@@ -38,19 +38,22 @@ describe 'upload feature', js: true do
     context 'mapping CSV columns' do
       context 'when identifier not selected' do
         it 'shows a validation message on the page' do
-          click_button 'Import CSV'
+          within all('tbody tr')[3] do
+            select 'Evidence Field'
+          end
 
-          message = page.find('#identifier_0', visible: false).native.attribute('validationMessage')
-          expect(message).to eq('Please select one of these options.')
+          click_button 'Import CSV'
+          expect(page).to have_text('An Issue ID must be selected.')
         end
       end
 
       context 'when there are evidence type but no node type selected' do
         it 'shows a validation message on the page' do
-          all('tbody tr')[0].hover
-          find('#identifier_0').click
+          within all('tbody tr')[2] do
+            select 'Issue ID'
+          end
 
-          within all('tbody tr')[4] do
+          within all('tbody tr')[3] do
             select 'Evidence Field'
           end
 
@@ -61,9 +64,7 @@ describe 'upload feature', js: true do
 
       context 'when project does not have RTP' do
         it 'imports all columns as fields' do
-          all('tbody tr')[0].hover
-          find('#identifier_0').click
-
+          select 'Issue ID', from: 'mappings[field_attributes][0][type]'
           select 'Node', from: 'mappings[field_attributes][3][type]'
           select 'Evidence Field', from: 'mappings[field_attributes][4][type]'
           select 'Evidence Field', from: 'mappings[field_attributes][5][type]'
@@ -76,7 +77,7 @@ describe 'upload feature', js: true do
             expect(page).to have_text('Worker process completed.')
 
             issue = Issue.last
-            expect(issue.fields).to eq({ 'Description' => 'Test CSV', 'Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1' })
+            expect(issue.fields).to eq({ 'Description' => 'Test CSV', 'Title' => 'SQL Injection', 'VulnerabilityCategory' =>'High', 'plugin' => 'csv', 'plugin_id' => '1' })
 
             node = issue.affected.first
             expect(node.label).to eq('10.0.0.1')
@@ -93,9 +94,6 @@ describe 'upload feature', js: true do
           @project.update(report_template_properties: rtp)
 
           page.refresh
-
-          all('tbody tr')[0].hover
-          find('#identifier_0').click
         end
 
         context 'without fields' do
@@ -103,16 +101,10 @@ describe 'upload feature', js: true do
           let (:issue_fields) { [] }
 
           it 'creates records with fields from the headers' do
+            select 'Issue ID', from: 'mappings[field_attributes][0][type]'
             select 'Node', from: 'mappings[field_attributes][3][type]'
             select 'Evidence Field', from: 'mappings[field_attributes][4][type]'
-            within all('tbody tr')[4] do
-              expect(page).to have_selector('option', text: 'Location')
-            end
-
             select 'Evidence Field', from: 'mappings[field_attributes][5][type]'
-            within all('tbody tr')[5] do
-              expect(page).to have_selector('option', text: 'Port')
-            end
 
             perform_enqueued_jobs do
               click_button 'Import CSV'
@@ -122,7 +114,7 @@ describe 'upload feature', js: true do
               expect(page).to have_text('Worker process completed.')
 
               issue = Issue.last
-              expect(issue.fields).to eq({ 'Description' => 'Test CSV', 'Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1' })
+              expect(issue.fields).to eq({ 'Description' => 'Test CSV', 'Title' => 'SQL Injection', 'Vulnerability Category' =>'High', 'plugin' => 'csv', 'plugin_id' => '1' })
 
               node = issue.affected.first
               expect(node.label).to eq('10.0.0.1')
@@ -144,34 +136,28 @@ describe 'upload feature', js: true do
           let (:issue_fields) {
             [
               { name: 'Title', type: :string, default: true },
-              { name: 'Description', type: :string, default: true}
+              { name: 'Description', type: :string, default: true},
+              { name: 'Severity', type: :string, default: true}
             ]
           }
 
           it 'shows the available fields for the selected type' do
             select 'Issue Field', from: 'mappings[field_attributes][1][type]'
 
-            within all('tbody tr')[1] do
-              issue_fields.each do |field|
-                expect(page).to have_selector('option', text: field[:name])
-              end
+            issue_fields.each do |field|
+              expect(page).to have_selector('option', text: field[:name])
             end
 
             select 'Evidence Field', from: 'mappings[field_attributes][4][type]'
 
-            within all('tbody tr')[4] do
-              evidence_fields.each do |field|
-                expect(page).to have_selector('option', text: field[:name])
-              end
+            evidence_fields.each do |field|
+              expect(page).to have_selector('option', text: field[:name])
             end
           end
 
-          it 'auto-selects the type and field for the identifier' do
-            expect(page).to have_select('mappings[field_attributes][0][type]', selected: 'Issue Field', disabled: true)
-            expect(page).to have_select('mappings[field_attributes][0][field]', selected: 'plugin_id', disabled: true)
-          end
-
           it 'can select which columns to import' do
+            select 'Issue ID', from: 'mappings[field_attributes][0][type]'
+
             select 'Issue Field', from: 'mappings[field_attributes][1][type]'
             select 'Title', from: 'mappings[field_attributes][1][field]'
 
@@ -186,6 +172,9 @@ describe 'upload feature', js: true do
             select 'Evidence Field', from: 'mappings[field_attributes][5][type]'
             select 'Port', from: 'mappings[field_attributes][5][field]'
 
+            select 'Issue Field', from: 'mappings[field_attributes][6][type]'
+            select 'Severity', from: 'mappings[field_attributes][6][field]'
+
             perform_enqueued_jobs do
               click_button 'Import CSV'
 
@@ -194,13 +183,49 @@ describe 'upload feature', js: true do
               expect(page).to have_text('Worker process completed.')
 
               issue = Issue.last
-              expect(issue.fields).to eq({ 'Description' => 'Test CSV', 'Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1' })
+              expect(issue.fields).to eq({ 'Description' => 'Test CSV', 'Title' => 'SQL Injection', 'Severity' => 'High', 'plugin' => 'csv', 'plugin_id' => '1' })
 
               node = issue.affected.first
               expect(node.label).to eq('10.0.0.1')
 
               evidence = node.evidence.first
               expect(evidence.fields).to eq({ 'Label' => '10.0.0.1', 'Location' => '10.0.0.1', 'Title' => 'SQL Injection', 'Port' => '443' })
+            end
+          end
+        end
+
+        context 'when no evidence fields' do
+          let (:evidence_fields) { [] }
+          let (:issue_fields) { [] }
+
+          it 'still creates evidence record' do
+            within all('tbody tr')[1] do
+              select 'Node'
+            end
+
+            within all('tbody tr')[2] do
+              select 'Issue ID'
+            end
+
+            within all('tbody tr')[5] do
+              select 'Issue Field'
+            end
+
+            perform_enqueued_jobs do
+              click_button 'Import CSV'
+
+              find('#console .log', wait: 30, match: :first)
+
+              expect(page).to have_text('Worker process completed.')
+
+              issue = Issue.last
+              expect(issue.fields).to include({ 'Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1' })
+
+              node = issue.affected.first
+              expect(node.label).to eq('10.0.0.1')
+
+              evidence = node.evidence.first
+              expect(evidence.content).to eq('')
             end
           end
         end
