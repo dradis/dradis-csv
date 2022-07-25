@@ -43,14 +43,14 @@ describe 'upload feature', js: true do
           end
 
           click_button 'Import CSV'
-          expect(page).to have_text('An Issue Identifier must be selected.')
+          expect(page).to have_text('An Issue ID must be selected.')
         end
       end
 
       context 'when there are evidence type but no node type selected' do
         it 'shows a validation message on the page' do
           within all('tbody tr')[2] do
-            select 'Issue Identifier'
+            select 'Issue ID'
           end
 
           within all('tbody tr')[3] do
@@ -69,7 +69,7 @@ describe 'upload feature', js: true do
           end
 
           within all('tbody tr')[2] do
-            select 'Issue Identifier'
+            select 'Issue ID'
           end
 
           within all('tbody tr')[3] do
@@ -113,7 +113,7 @@ describe 'upload feature', js: true do
           end
 
           within all('tbody tr')[2] do
-            select 'Issue Identifier'
+            select 'Issue ID'
           end
 
           within all('tbody tr')[3] do
@@ -154,7 +154,7 @@ describe 'upload feature', js: true do
             end
 
             within all('tbody tr')[2] do
-              select 'Issue Identifier'
+              select 'Issue ID'
             end
 
             within all('tbody tr')[5] do
