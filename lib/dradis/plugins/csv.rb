@@ -6,4 +6,5 @@ module Dradis
 end
 
 require 'dradis/plugins/csv/engine'
+require 'dradis/plugins/csv/importer'
 require 'dradis/plugins/csv/version'
