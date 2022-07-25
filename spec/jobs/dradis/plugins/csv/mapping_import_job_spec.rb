@@ -105,5 +105,27 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
         expect(Evidence.count).to eq(0)
       end
     end
+
+    context 'when no evidence fields' do
+      let(:mappings) do
+        {
+          '1' => { 'type' => 'issue', 'field' => 'MyTitle' },
+          '3' => { 'type' => 'node', 'field' => '' }
+        }
+      end
+
+      it 'still creates evidence record' do
+        perform_job
+
+        issue = Issue.first
+        expect(issue.fields).to eq({ 'Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1' })
+
+        node = issue.affected.first
+        expect(node.label).to eq('10.0.0.1')
+
+        evidence = node.evidence.first
+        expect(evidence.content).to eq('')
+      end
+    end
   end
 end

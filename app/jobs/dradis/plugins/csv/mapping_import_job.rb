@@ -70,11 +70,9 @@ module Dradis::Plugins::CSV
         @logger.info { "\t\t => Processing node: #{node_label}" }
         node = content_service.create_node(label: node_label, type: :host)
 
-        if @evidence_mappings.present?
-          @logger.info{ "\t\t => Creating evidence: (node: #{node_label}, plugin_id: #{id})" }
-          evidence_content = build_text(mappings: @evidence_mappings, row: row)
-          content_service.create_evidence(issue: issue, node: node, content: evidence_content)
-        end
+        @logger.info{ "\t\t => Creating evidence: (node: #{node_label}, plugin_id: #{id})" }
+        evidence_content = build_text(mappings: @evidence_mappings, row: row)
+        content_service.create_evidence(issue: issue, node: node, content: evidence_content)
       end
     end
 
