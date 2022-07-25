@@ -22,7 +22,6 @@
     >
       <thead>
         <tr>
-          <th class="no-sort">Unique Identifier <i class="fa fa-question-circle" data-toggle="tooltip" title="Ensure duplicate issues with this value are not created."></i></th>
           <th>Column Header From File</th>
           <th class="no-sort">Type</th>
           <th>Field in Dradis</th>
@@ -31,18 +30,10 @@
           <tbody>
             <% @headers.each_with_index do |header, index| %>
               <tr>
-                <td>
-                  <div class="form-check">
-                    <%= f.radio_button 'identifier', index, class: 'form-check-input' %>
-                    <%= f.label :identifier, class: 'form-check-label' do %>
-                      <span class="sr-only">Select</span>
-                    <% end %>
-                  </div>
-                </td>
                 <td><%= header %></td>
                 <td>
                   <div class="form-group m-0">
-                    <%= f.select "mappings[#{index}][type]", [['Issue Field', 'issue'], ['Evidence Field', 'evidence'], ['Node Label', 'node']], {}, class: 'form-control custom-select w-75', data: { behavior: 'type-select' } %>
+                    <%= f.select "mappings[#{index}][type]", [['Issue Field', 'issue'], ['Issue Identifier', 'identifier'], ['Evidence Field', 'evidence'], ['Node Label', 'node']], {}, class: 'form-control custom-select w-75', data: { behavior: 'type-select' } %>
                   </div>
                 </td>
                 <td>

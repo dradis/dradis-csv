@@ -5,7 +5,7 @@ module Dradis::Plugins::CSV
     before_action :load_attachment, only: [:new]
 
     def new
-      @default_columns = ['Unique Identifier', 'Column Header From File', 'Type', 'Field in Dradis']
+      @default_columns = ['Column Header From File', 'Type', 'Field in Dradis']
 
       @headers = ::CSV.open(@attachment.fullpath, &:readline)
     end
