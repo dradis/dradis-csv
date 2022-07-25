@@ -23,7 +23,7 @@ module Dradis::Plugins::CSV
         uid: params[:log_uid].to_i
       )
 
-      Resque.redis.del(params[:job_id])
+      Resque.redis.del(Importer::REDIS_PREFIX + params[:job_id])
     end
 
     private
@@ -33,14 +33,17 @@ module Dradis::Plugins::CSV
     end
 
     def load_attachment
-      job_id = params[:job_id].to_i
-      filename = Resque.redis.get(job_id)
+      if Integer(params[:job_id], exception: false)
+        filename = Resque.redis.get(Importer::REDIS_PREFIX + params[:job_id])
 
-      unless filename
-        return redirect_to main_app.project_upload_manager_path
+        unless filename
+          return redirect_to main_app.project_upload_manager_path
+        end
+
+        @attachment = Attachment.find(filename, conditions: { node_id: current_project.plugin_uploads_node.id })
+      else
+        redirect_to main_app.project_upload_path, alert: 'Something fishy is going on...'
       end
-
-      @attachment = Attachment.find(filename, conditions: { node_id: current_project.plugin_uploads_node.id })
     end
 
     def mappings_params
