@@ -4,11 +4,10 @@ module Dradis::Plugins::CSV
 
     before_action :load_attachment, only: [:new, :create]
     before_action :load_rtp_fields, only: [:new]
+    before_action :load_csv_headers, only: [:new]
 
     def new
       @default_columns = ['Column Header', 'Entity', 'Dradis Field']
-
-      @headers = ::CSV.open(@attachment.fullpath, &:readline)
 
       @log_uid = Log.new.uid
     end
@@ -42,6 +41,20 @@ module Dradis::Plugins::CSV
             issue: rtp.issue_fields.map(&:name)
           }
         end
+    end
+
+    def load_csv_headers
+      begin
+        unless File.extname(@attachment.fullpath) == '.csv'
+          raise Dradis::Plugins::CSV::FileExtensionError
+        end
+
+        @headers = ::CSV.open(@attachment.fullpath, &:readline)
+      rescue CSV::MalformedCSVError => e
+        return redirect_to main_app.project_upload_manager_path, alert: "The uploaded file is not a valid CSV file: #{e.message}"
+      rescue Dradis::Plugins::CSV::FileExtensionError
+        return redirect_to main_app.project_upload_manager_path, alert: "The uploaded file is not a CSV file."
+      end
     end
 
     def load_attachment
