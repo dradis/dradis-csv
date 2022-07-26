@@ -17,6 +17,7 @@ module Dradis::Plugins::CSV
       job_logger.write 'Enqueueing job to start in the background.'
 
       MappingImportJob.perform_later(
+        default_user_id: current_user.id,
         file: @attachment.fullpath.to_s,
         mappings: mappings_params[:field_attributes].to_h,
         project_id: current_project.id,
