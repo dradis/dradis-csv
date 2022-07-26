@@ -22,14 +22,16 @@ module Dradis::Plugins::CSV
 
       mappings_groups = params[:mappings].group_by { |index, mapping| mapping['type'] }
 
+      filename = File.basename(params[:file])
       id_index = Integer(mappings_groups['identifier']&.first&.first, exception: false)
       @evidence_mappings = mappings_groups['evidence'] || []
       @issue_lookup = {}
       @issue_mappings = mappings_groups['issue'] || []
       @node_index = Integer(mappings_groups['node']&.first&.first, exception: false)
 
+
       CSV.foreach(params[:file], headers: true).with_index do |row, index|
-        csv_id = row[id_index] || "#{File.basename(params[:file])}-#{index}"
+        csv_id = row[id_index] || "#{filename}-#{index}"
         process_issue(csv_id: csv_id, row: row)
         process_node(csv_id: csv_id, row: row)
       end
