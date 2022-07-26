@@ -14,11 +14,11 @@
 <div class="content-container">
   <div data-behavior="validation-messages">
     <div class="alert alert-danger d-none" data-behavior="issue-id-validation-message">
-      An Issue ID must be selected.
+      <p>An Issue ID must be selected.</p>
     </div>
 
     <div class="alert alert-danger d-none" data-behavior="node-type-validation-message">
-      A Node Label Type must be selected to import evidence records.
+      <p>A Node Label must be selected to import evidence records.</p>
     </div>
   </div>
 
@@ -52,7 +52,7 @@
             <td>
               <% if current_project.report_template_properties %>
                 <div class="form-group m-0">
-                  <%= f.text_field "mappings[#{index}][field]", class: 'form-control' %>
+                  <%= f.text_field "mappings[field_attributes][#{index}][field]", class: 'form-control' %>
                 </div>
               <% else %>
                 <span data-behavior="default-field-label"><%= header %></span>
