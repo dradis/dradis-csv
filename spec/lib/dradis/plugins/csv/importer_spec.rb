@@ -98,7 +98,7 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
       end
     end
 
-    context 'when no identifer is passed in' do
+    context 'when no identifier is passed in' do
       let(:mappings) do
         {
           '1' => { 'type' => 'issue' },
@@ -106,13 +106,11 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
         }
       end
 
-      it 'does not create any issue, node and evidence' do
-        expect {
-          import_csv
-        }.to change(Issue, :count).by(0)
+      it 'uses filename and row index as csv_id' do
+        import_csv
 
-        expect(Node.count).to eq(0)
-        expect(Evidence.count).to eq(0)
+        issue = Issue.last
+        expect(issue.fields).to eq({ 'Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => 'simple.csv-0' })
       end
     end
 
