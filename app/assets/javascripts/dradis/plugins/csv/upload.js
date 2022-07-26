@@ -34,5 +34,51 @@ document.addEventListener('turbolinks:load', function() {
       $nodeSelect.closest('tr').find('[data-behavior=na-field-label]').removeClass('d-none');
       $nodeSelect.closest('tr').find('[data-behavior=default-field-label]').addClass('d-none');
     });
+
+    $('[data-behavior~=mapping-form]').submit(function() {
+      var valid = validateIdentifierSelected() && validateNodeSelected();
+
+      if (!valid) {
+        $(this).find('input[type="submit"]').attr('disabled', false).val('Import CSV');
+
+        $('[data-behavior~=view-content]').animate({
+          scrollTop: $('[data-behavior~=validation-messages]').scrollTop()
+        });
+      }
+
+      return valid;
+    });
+
+    function validateNodeSelected() {
+      var $validationMessage = $('[data-behavior~=node-type-validation-message]');
+      $validationMessage.addClass('d-none');
+
+      var selectedEvidenceCount = $('select option[value="evidence"]:selected').length;
+      var selectedNodeCount = $('select option[value="node"]:selected').length;
+
+      var valid =  selectedEvidenceCount == 0 ||
+                   (selectedEvidenceCount > 0 && selectedNodeCount > 0);
+
+      if (!valid) {
+        $validationMessage.removeClass('d-none');
+      }
+
+      return valid;
+    }
+
+    function validateIdentifierSelected() {
+      var $validationMessage = $('[data-behavior~=issue-id-validation-message]');
+      $validationMessage.addClass('d-none');
+
+      var selectedIdentifierCount = $('select option[value="identifier"]:selected').length;
+
+      var valid = selectedIdentifierCount == 1;
+
+      if (!valid) {
+        $validationMessage.removeClass('d-none');
+      }
+
+      return valid;
+    }
   }
 });
