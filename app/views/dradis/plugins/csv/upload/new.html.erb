@@ -35,28 +35,33 @@
     >
       <thead>
         <tr>
-          <th>Column Header From File</th>
-          <th class="no-sort">Type</th>
-          <th>Field in Dradis</th>
+          <th>Column Header</th>
+          <th class="no-sort">Entity</th>
+          <th>Dradis Field</th>
         </tr>
       </thead>
       <tbody>
         <% @headers.each_with_index do |header, index| %>
-          <tr>
+          <tr class="issue-type">
             <td><%= header %></td>
             <td>
               <div class="form-group m-0">
-                <%= f.select "mappings[field_attributes][#{index}][type]", [['Issue Field', 'issue'], ['Issue ID', 'identifier'], ['Evidence Field', 'evidence'], ['Node Label', 'node']], {}, class: 'form-control custom-select w-75', data: { behavior: 'type-select' } %>
+                <%= f.select "mappings[field_attributes][#{index}][type]", [['Issue Field', 'issue'], ['Issue ID', 'identifier'], ['Evidence Field', 'evidence'], ['Node', 'node'], ['&#9472;'.html_safe, 'divider'], ['Do Not Import','skip']], { disabled: 'divider' }, class: 'form-control custom-select w-75', data: { behavior: 'type-select' } %>
               </div>
             </td>
             <td>
-              <% if current_project.report_template_properties %>
+              <% if @rtp_fields %>
                 <div class="form-group m-0">
-                  <%= f.text_field "mappings[field_attributes][#{index}][field]", class: 'form-control' %>
+                  <% issue_options = @rtp_fields[:issue].any? ? options_for_select(@rtp_fields[:issue]) : options_for_select([[header, header]], disabled: header, selected: header) %>
+                  <%= f.select "mappings[field_attributes][#{index}][field]", issue_options, {}, class: 'form-control custom-select w-75 field-select', data: { behavior: 'issue-field-select', header: header } %>
+
+                  <% evidence_options = @rtp_fields[:evidence].any? ? options_for_select(@rtp_fields[:evidence]) : options_for_select([[header, header]], disabled: header, selected: header) %>
+                  <%= f.select "mappings[field_attributes][#{index}][field]", evidence_options, {}, disabled: true, class: 'form-control custom-select w-75 field-select d-none', data: { behavior: 'evidence-field-select', header: header } %>
+
+                  <%= f.select "mappings[field_attributes][#{index}][field]", [['N/A', '']], {}, disabled: true, class: 'form-control custom-select w-75 field-select d-none', data: { behavior: 'empty-field-select', header: header } %>
                 </div>
               <% else %>
-                <span data-behavior="default-field-label"><%= header %></span>
-                <span data-behavior="na-field-label" class="d-none">N/A</span>
+                <span data-behavior="field-label" data-header="<%= header %>" ><%= header %></span>
               <% end %>
             </td>
           </tr>

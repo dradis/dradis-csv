@@ -9,9 +9,32 @@ body.upload.new {
 
   .table {
     margin-bottom: 0 !important;
-    
-    td {
-      vertical-align: middle;
+
+    tr {
+      &.issue-type:hover {
+        .identifier {
+          opacity: 1;
+          pointer-events: all;
+        }
+      }
+
+      td {
+        vertical-align: middle;
+
+        &:first-child {
+          padding-left: 1.25rem;
+          width: 3rem;
+        }
+
+        .identifier {
+          opacity: 0;
+          pointer-events: none;
+
+          &:checked {
+            opacity: 1;
+          }
+        }
+      }
     }
   }
 
