@@ -1,6 +1,7 @@
 module Dradis
   module Plugins
     module CSV
+      class FileExtensionError < StandardError; end
     end
   end
 end

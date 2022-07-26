@@ -33,9 +33,15 @@ module Dradis::Plugins::CSV
 
     def load_csv_headers
       begin
+        unless File.extname(@attachment.fullpath) == '.csv'
+          raise Dradis::Plugins::CSV::FileExtensionError
+        end
+
         @headers = ::CSV.open(@attachment.fullpath, &:readline)
       rescue CSV::MalformedCSVError => e
         return redirect_to main_app.project_upload_manager_path, alert: "The uploaded file is not a valid CSV file: #{e.message}"
+      rescue Dradis::Plugins::CSV::FileExtensionError
+        return redirect_to main_app.project_upload_manager_path, alert: "The uploaded file is not a CSV file."
       end
     end
 
