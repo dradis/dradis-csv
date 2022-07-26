@@ -44,14 +44,6 @@ document.addEventListener('turbolinks:load', function() {
       _setDradisFieldSelect($(this));
     });
 
-    $('[data-behavior=identifier]').on('mousedown', function(e){
-      var $previousRow = $('[data-behavior=identifier]:checked').closest('tr'),
-          $currentRow = $(this).closest('tr');
-
-      _resetRow($previousRow);
-      _disableIdentifierRow($currentRow);
-    });
-
     $('[data-behavior~=mapping-form]').submit(function() {
       var valid = _validateIdentifierSelected() && _validateNodeSelected();
 
