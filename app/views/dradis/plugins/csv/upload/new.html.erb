@@ -12,7 +12,20 @@
 <% end %>
 
 <div class="content-container">
-  <%= form_with url: project_upload_index_path(current_project), method: :post do |f| %>
+  <div data-behavior="validation-messages">
+    <div class="alert alert-danger d-none" data-behavior="issue-id-validation-message">
+      <p>An Issue ID must be selected.</p>
+    </div>
+
+    <div class="alert alert-danger d-none" data-behavior="node-type-validation-message">
+      <p>A Node Label must be selected to import evidence records.</p>
+    </div>
+  </div>
+
+  <%= form_with url: project_upload_index_path(current_project, format: :js), method: :post, data: { behavior: 'mapping-form' } do |f| %>
+    <%= hidden_field_tag 'log_uid', @log_uid %>
+    <%= hidden_field_tag 'job_id', params[:job_id] %>
+
     <table class="table table-striped mb-0"
       data-behavior="dradis-datatable"
       data-column-toggle="false"
@@ -22,37 +35,52 @@
     >
       <thead>
         <tr>
-          <th>Column Header From File</th>
-          <th class="no-sort">Type</th>
-          <th>Field in Dradis</th>
+          <th>Column Header</th>
+          <th class="no-sort">Entity</th>
+          <th>Dradis Field</th>
         </tr>
       </thead>
-          <tbody>
-            <% @headers.each_with_index do |header, index| %>
-              <tr>
-                <td><%= header %></td>
-                <td>
-                  <div class="form-group m-0">
-                    <%= f.select "mappings[#{index}][type]", [['Issue Field', 'issue'], ['Issue ID', 'identifier'], ['Evidence Field', 'evidence'], ['Node Label', 'node']], {}, class: 'form-control custom-select w-75', data: { behavior: 'type-select' } %>
-                  </div>
-                </td>
-                <td>
-                  <% if current_project.report_template_properties %>
-                    <div class="form-group m-0">
-                      <%= f.text_field "mappings[#{index}][field]", class: 'form-control' %>
-                    </div>
-                  <% else %>
-                    <span data-behavior="default-field-label"><%= header %></span>
-                    <span data-behavior="na-field-label" class="d-none">N/A</span>
-                  <% end %>
-                </td>
-              </tr>
-            <% end %>
-        </tbody>
+      <tbody>
+        <% @headers.each_with_index do |header, index| %>
+          <tr class="issue-type">
+            <td><%= header %></td>
+            <td>
+              <div class="form-group m-0">
+                <%= f.select "mappings[field_attributes][#{index}][type]", [['Issue Field', 'issue'], ['Issue ID', 'identifier'], ['Evidence Field', 'evidence'], ['Node', 'node'], ['&#9472;'.html_safe, 'divider'], ['Do Not Import','skip']], { disabled: 'divider' }, class: 'form-control custom-select w-75', data: { behavior: 'type-select' } %>
+              </div>
+            </td>
+            <td>
+              <% if @rtp_fields %>
+                <div class="form-group m-0">
+                  <% issue_options = @rtp_fields[:issue].any? ? options_for_select(@rtp_fields[:issue]) : options_for_select([[header, header]], disabled: header, selected: header) %>
+                  <%= f.select "mappings[field_attributes][#{index}][field]", issue_options, {}, class: 'form-control custom-select w-75 field-select', data: { behavior: 'issue-field-select', header: header } %>
+
+                  <% evidence_options = @rtp_fields[:evidence].any? ? options_for_select(@rtp_fields[:evidence]) : options_for_select([[header, header]], disabled: header, selected: header) %>
+                  <%= f.select "mappings[field_attributes][#{index}][field]", evidence_options, {}, disabled: true, class: 'form-control custom-select w-75 field-select d-none', data: { behavior: 'evidence-field-select', header: header } %>
+
+                  <%= f.select "mappings[field_attributes][#{index}][field]", [['N/A', '']], {}, disabled: true, class: 'form-control custom-select w-75 field-select d-none', data: { behavior: 'empty-field-select', header: header } %>
+                </div>
+              <% else %>
+                <span data-behavior="field-label" data-header="<%= header %>" ><%= header %></span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
     </table>
     <div class="form-actions">
-      <%= f.submit 'Import CSV', class: 'btn btn-primary mr-1' %> or
+      <%= f.submit 'Import CSV', class: 'btn btn-primary mr-1', data: { disable_with: false } %> or
       <%= link_to 'Cancel', main_app.project_upload_manager_path(current_project) %>
     </div>
   <% end %>
+</div>
+
+<div class="col-12 p-0 order-3 order-xxl-4">
+  <div class="content-container mt-0">
+    <h4 class="header-underline">Output console</h4>
+    <div id="status"></div>
+    <%= content_tag :div, id: 'result', style: 'display:none', data: { url: main_app.status_console_index_path }  do %>
+      <div id="console" class="mx-0 mb-0"></div>
+    <% end %>
+  </div>
 </div>

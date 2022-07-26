@@ -1,0 +1,4 @@
+$('#result').show();
+ConsoleUpdater.jobId = <%= @job_logger.uid %>;
+ConsoleUpdater.parsing = true;
+setTimeout(ConsoleUpdater.updateConsole, 1000);
