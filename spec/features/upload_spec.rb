@@ -199,4 +199,20 @@ describe 'upload feature', js: true do
       expect(current_path).to eq(main_app.project_upload_manager_path(@project))
     end
   end
+
+  context 'uploading any file other than CSV' do
+    let(:file_path) { Rails.root.join('spec/fixtures/files/rails.png') }
+    before do
+      select 'Dradis::Plugins::CSV', from: 'uploader'
+
+      within('.custom-file') do
+        page.find('#file', visible: false).attach_file(file_path)
+      end
+    end
+
+    it 'redirects to upload manager' do
+      expect(page).to have_text('The uploaded file is not a CSV file.')
+      expect(current_path).to eq(main_app.project_upload_manager_path(@project))
+    end
+  end
 end
