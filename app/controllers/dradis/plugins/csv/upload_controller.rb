@@ -3,11 +3,10 @@ module Dradis::Plugins::CSV
     include ProjectScoped
 
     before_action :load_attachment, only: [:new, :create]
+    before_action :load_csv_headers, only: [:new]
 
     def new
       @default_columns = ['Column Header From File', 'Type', 'Field in Dradis']
-
-      @headers = ::CSV.open(@attachment.fullpath, &:readline)
 
       @log_uid = Log.new.uid
     end
@@ -30,6 +29,20 @@ module Dradis::Plugins::CSV
 
     def job_logger
       @job_logger ||= Log.new(uid: params[:log_uid].to_i)
+    end
+
+    def load_csv_headers
+      begin
+        unless File.extname(@attachment.fullpath) == '.csv'
+          raise Dradis::Plugins::CSV::FileExtensionError
+        end
+
+        @headers = ::CSV.open(@attachment.fullpath, &:readline)
+      rescue CSV::MalformedCSVError => e
+        return redirect_to main_app.project_upload_manager_path, alert: "The uploaded file is not a valid CSV file: #{e.message}"
+      rescue Dradis::Plugins::CSV::FileExtensionError
+        return redirect_to main_app.project_upload_manager_path, alert: "The uploaded file is not a CSV file."
+      end
     end
 
     def load_attachment
