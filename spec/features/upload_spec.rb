@@ -58,7 +58,7 @@ describe 'upload feature', js: true do
           end
 
           click_button 'Import CSV'
-          expect(page).to have_text('A Node Label Type must be selected to import evidence records.')
+          expect(page).to have_text('A Node Label must be selected to import evidence records.')
         end
       end
 
