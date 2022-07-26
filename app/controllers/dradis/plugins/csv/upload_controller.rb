@@ -17,12 +17,7 @@ module Dradis::Plugins::CSV
     private
 
     def load_attachment
-      if Integer(params[:job_id], exception: false)
-        filename = Resque.redis.get(Importer::REDIS_PREFIX + params[:job_id])
-        @attachment = Attachment.find(filename, conditions: { node_id: current_project.plugin_uploads_node.id })
-      else
-        redirect_to main_app.project_upload_path, alert: 'Something fishy is going on...'
-      end
+      @attachment = Attachment.find(params[:attachment], conditions: { node_id: current_project.plugin_uploads_node.id })
     end
   end
 end

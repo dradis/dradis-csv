@@ -6,8 +6,9 @@ window.addEventListener('job-done', function(e){
     if (uploader.value === 'Dradis::Plugins::CSV') {
       var path = window.location.pathname;
       var project_path = path.split('/').slice(0, -1).join('/');
+      var attachment = $('#filename').val();
 
-      var redirectPath  = project_path + '/addons/csv/upload/new?job_id=' + jobId;
+      var redirectPath  = project_path + '/addons/csv/upload/new?attachment=' + attachment;
       Turbolinks.visit(redirectPath);
     }
   }
