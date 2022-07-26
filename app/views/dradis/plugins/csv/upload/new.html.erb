@@ -52,7 +52,7 @@
             <td>
               <% if current_project.report_template_properties %>
                 <div class="form-group m-0">
-                  <%= f.text_field "mappings[#{index}][field]", class: 'form-control' %>
+                  <%= f.text_field "mappings[field_attributes][#{index}][field]", class: 'form-control' %>
                 </div>
               <% else %>
                 <span data-behavior="default-field-label"><%= header %></span>
