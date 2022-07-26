@@ -61,71 +61,18 @@ document.addEventListener('turbolinks:load', function() {
     // Private methods
 
     function _setDradisFieldSelect($select) {
-      var rtpFields = $('[data-behavior=dradis-datatable]').data('rtp-fields');
-      if (rtpFields) {
-        var fields = rtpFields[$select.val()],
-            $fieldSelect = $select.closest('tr').find('[data-behavior=field-select]');
+      var $row = $select.closest('tr');
 
-        if ($select.val() in rtpFields){
-          if (fields.length > 0) {
-            $fieldSelect.empty();
-            fields.forEach(function(value) {
-              $fieldSelect
-                .removeAttr('disabled')
-                .append(
-                  $('<option></option>').attr('value', value).text(value)
-                );
-            });
-          }
-          else {
-            var header = $fieldSelect.data('header');
-            $fieldSelect
-              .html(
-                $('<option disabled="disabled" selected></option>').attr('value', header).text(header)
-              );
-          }
-        } else if ($select.val()== 'node') {
-          $fieldSelect
-            .attr('disabled', 'disabled')
-            .html(
-              $('<option></option>').attr('value', '').text('Label')
-            );
-        } else {
-          $fieldSelect
-            .attr('disabled', 'disabled')
-            .html(
-              $('<option></option>').attr('value', '').text('N/A')
-            );
-        }
+      $row.find('.field-select').attr('disabled', 'disabled').addClass('d-none');
+      if ($select.val() == 'issue') {
+        $row.find('[data-behavior=issue-field-select]').removeAttr('disabled', 'disabled').removeClass('d-none');
       }
-    }
-
-    function _disableIdentifierRow($row) {
-      var $fieldSelect = $row.find('[data-behavior=field-select]'),
-          $typeSelect = $row.find('[data-behavior=type-select]');
-
-      $typeSelect.attr('disabled', 'disabled');
-      $typeSelect.val('issue').change();
-
-      $fieldSelect.attr('disabled', 'disabled');
-      // With RTP
-      $fieldSelect.html($('<option selected></option>').attr('value', 'plugin_id').text('plugin_id'));
-      // With no RTP
-      $row.find('[data-behavior=field-label]').text('plugin_id');
-    }
-
-    function _resetRow($row) {
-      var $fieldSelect = $row.find('[data-behavior=field-select]'),
-          $typeSelect = $row.find('[data-behavior=type-select]'),
-          $fieldLabel = $row.find('[data-behavior=field-label]');
-
-      $fieldSelect.removeAttr('disabled');
-      $typeSelect.removeAttr('disabled');
-
-      // With RTP
-      _setDradisFieldSelect($typeSelect);
-      // With no RTP
-      $fieldLabel.text($fieldLabel.data('header'));
+      else if ($select.val() == 'evidence') {
+        $row.find('[data-behavior=evidence-field-select]').removeAttr('disabled').removeClass('d-none');
+      }
+      else {
+        $row.find('[data-behavior=empty-field-select]').removeAttr('disabled').removeClass('d-none');
+      }
     }
 
     function _validateNodeSelected() {
