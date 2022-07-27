@@ -27,13 +27,7 @@
     <%= hidden_field_tag 'job_id', params[:job_id] %>
     <%= hidden_field_tag 'attachment', params[:attachment] %>
 
-    <table class="table table-striped mb-0"
-      data-behavior="dradis-datatable"
-      data-column-toggle="false"
-      data-default-columns="<%= @default_columns %>"
-      data-item-name="csv_item"
-      data-paging="false"
-    >
+    <table class="table table-striped mb-0">
       <thead>
         <tr>
           <th>Column Header</th>
