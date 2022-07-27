@@ -21,11 +21,6 @@ body.upload.new {
       td {
         vertical-align: middle;
 
-        &:first-child {
-          padding-left: 1.25rem;
-          width: 3rem;
-        }
-
         .identifier {
           opacity: 0;
           pointer-events: none;
