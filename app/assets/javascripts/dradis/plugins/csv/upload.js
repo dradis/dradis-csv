@@ -1,13 +1,13 @@
-window.addEventListener('job-done', function(e){
+window.addEventListener('job-done', function(){
   if ($('body.upload.index').length) {
-    var jobId = e.detail.job_id,
-        uploader = document.getElementById('uploader');
+    var uploader = document.getElementById('uploader');
 
     if (uploader.value === 'Dradis::Plugins::CSV') {
       var path = window.location.pathname;
       var project_path = path.split('/').slice(0, -1).join('/');
+      var attachment = $('#attachment').val();
 
-      var redirectPath  = project_path + '/addons/csv/upload/new?job_id=' + jobId;
+      var redirectPath  = project_path + '/addons/csv/upload/new?attachment=' + attachment;
       Turbolinks.visit(redirectPath);
     }
   }
