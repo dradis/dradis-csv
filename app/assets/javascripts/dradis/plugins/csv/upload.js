@@ -28,17 +28,21 @@ document.addEventListener('turbolinks:load', function() {
       $(this).parents('tr').toggleClass('issue-type', $(this).val() == 'issue');
 
       // Update fields column labels
-      var nodeSelected = $(this).val() == 'node',
-          skipSelected = $(this).val() == 'skip',
-          $fieldLabel = $(this).closest('tr').find('[data-behavior=field-label]');
+      var $fieldLabel = $(this).closest('tr').find('[data-behavior=field-label]');
 
-      if (skipSelected) {
-        $fieldLabel.text('N/A');
-      } else if (nodeSelected) {
-        $fieldLabel.text('Label');
-      } else {
-        var header = $fieldLabel.data('header');
-        $fieldLabel.text(header);
+      switch($(this).val()) {
+        case 'identifier': 
+          $fieldLabel.text('plugin_id');
+          break;
+        case 'node':
+          $fieldLabel.text('Label');
+          break;
+        case 'skip':
+          $fieldLabel.text('N/A');
+          break;
+        default: 
+          var header = $fieldLabel.data('header');
+          $fieldLabel.text(header);
       }
 
       _setDradisFieldSelect($(this));
