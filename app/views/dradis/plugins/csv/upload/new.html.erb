@@ -62,7 +62,7 @@
                   <%= f.select "mappings[field_attributes][#{index}][field]", [['N/A', '']], {}, disabled: true, class: 'form-control custom-select w-75 field-select d-none', data: { behavior: 'empty-field-select', header: header } %>
                 </div>
               <% else %>
-                <span data-behavior="field-label" data-header="<%= header %>" ><%= header %></span>
+                <span data-behavior="field-label" data-header="<%= header.delete(" \t\r\n") %>" ><%= header.delete(" \t\r\n") %></span>
               <% end %>
             </td>
           </tr>
