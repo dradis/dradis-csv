@@ -22,8 +22,6 @@ module Dradis::Plugins::CSV
         project_id: current_project.id,
         uid: params[:log_uid].to_i
       )
-
-      Resque.redis.del(Importer::REDIS_PREFIX + params[:job_id])
     end
 
     private

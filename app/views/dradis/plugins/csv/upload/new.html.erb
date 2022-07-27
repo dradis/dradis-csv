@@ -25,6 +25,7 @@
   <%= form_with url: project_upload_index_path(current_project, format: :js), method: :post, data: { behavior: 'mapping-form' } do |f| %>
     <%= hidden_field_tag 'log_uid', @log_uid %>
     <%= hidden_field_tag 'job_id', params[:job_id] %>
+    <%= hidden_field_tag 'attachment', params[:attachment] %>
 
     <table class="table table-striped mb-0"
       data-behavior="dradis-datatable"
