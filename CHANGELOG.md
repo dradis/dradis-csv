@@ -1,2 +1,2 @@
-v4.5.0 (XXX 2022)
+v4.5.0 (August 2022)
   - Initial implementation
