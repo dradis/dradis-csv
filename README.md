@@ -2,7 +2,7 @@
 
 Upload CSV files into Dradis.
 
-The add-on requires [Dradis CE](https://dradisframework.org/) > 4.0, or [Dradis Pro](https://dradisframework.com/pro/).
+The add-on requires [Dradis CE](https://dradisframework.org/) > 4.5, or [Dradis Pro](https://dradisframework.com/pro/) > 4.5.
 
 
 ## More information
