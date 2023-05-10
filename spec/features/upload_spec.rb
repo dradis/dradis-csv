@@ -199,12 +199,16 @@ describe 'upload feature', js: true do
           let (:issue_fields) { [] }
 
           it 'still creates evidence record' do
-            within all('tbody tr')[1] do
-              select 'Node'
+            within all('tbody tr')[0] do
+              select 'Issue ID'
             end
 
-            within all('tbody tr')[2] do
-              select 'Issue ID'
+            within all('tbody tr')[1] do
+              select 'Issue Field'
+            end
+
+            within all('tbody tr')[3] do
+              select 'Node'
             end
 
             within all('tbody tr')[5] do
@@ -233,8 +237,7 @@ describe 'upload feature', js: true do
     end
   end
 
-  context 'uploading a malformed CSV file' do
-    let(:file_path) { File.expand_path('../fixtures/files/simple_malformed.csv', __dir__) }
+  describe 'CSV file samples' do
     before do
       select 'Dradis::Plugins::CSV', from: 'uploader'
 
@@ -243,25 +246,36 @@ describe 'upload feature', js: true do
       end
     end
 
-    it 'redirects to upload manager' do
-      expect(page).to have_text('The uploaded file is not a valid CSV file')
-      expect(current_path).to eq(main_app.project_upload_manager_path(@project))
-    end
-  end
+    context 'uploading a malformed CSV file' do
+      let(:file_path) { File.expand_path('../fixtures/files/simple_malformed.csv', __dir__) }
 
-  context 'uploading any file other than CSV' do
-    let(:file_path) { Rails.root.join('spec/fixtures/files/rails.png') }
-    before do
-      select 'Dradis::Plugins::CSV', from: 'uploader'
+      it 'redirects to upload manager with error' do
+        find('.alert.alert-danger', wait: 30)
 
-      within('.custom-file') do
-        page.find('#file', visible: false).attach_file(file_path)
+        expect(page).to have_text('The uploaded file is not a valid CSV file')
+        expect(current_path).to eq(main_app.project_upload_manager_path(@project))
       end
     end
 
-    it 'redirects to upload manager' do
-      expect(page).to have_text('The uploaded file is not a CSV file.')
-      expect(current_path).to eq(main_app.project_upload_manager_path(@project))
+    context 'uploading any file other than CSV' do
+      let(:file_path) { Rails.root.join('spec/fixtures/files/rails.png') }
+
+      it 'redirects to upload manager with error' do
+        find('.alert.alert-danger', wait: 30)
+
+        expect(page).to have_text('The uploaded file is not a CSV file.')
+        expect(current_path).to eq(main_app.project_upload_manager_path(@project))
+      end
+    end
+
+    context 'uploading file with special characters in the filename' do
+      let(:file_path) { File.expand_path('../fixtures/files/simple (copy).csv', __dir__) }
+
+      it 'redirects to upload manager' do
+        find('body.upload.new', wait: 30)
+
+        expect(current_path).to eq(csv.new_project_upload_path(@project))
+      end
     end
   end
 end

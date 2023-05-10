@@ -30,15 +30,9 @@ module Dradis::Plugins::CSV
       @job_logger ||= Log.new(uid: params[:log_uid].to_i)
     end
 
-    def load_rtp_fields
-      rtp = current_project.report_template_properties
-      @rtp_fields =
-        unless rtp.nil?
-          {
-            evidence: rtp.evidence_fields.map(&:name),
-            issue: rtp.issue_fields.map(&:name)
-          }
-        end
+    def load_attachment
+      filename = CGI::escape params[:attachment]
+      @attachment = Attachment.find(filename, conditions: { node_id: current_project.plugin_uploads_node.id })
     end
 
     def load_csv_headers
@@ -55,8 +49,15 @@ module Dradis::Plugins::CSV
       end
     end
 
-    def load_attachment
-      @attachment = Attachment.find(params[:attachment], conditions: { node_id: current_project.plugin_uploads_node.id })
+    def load_rtp_fields
+      rtp = current_project.report_template_properties
+      @rtp_fields =
+        unless rtp.nil?
+          {
+            evidence: rtp.evidence_fields.map(&:name),
+            issue: rtp.issue_fields.map(&:name)
+          }
+        end
     end
 
     def mappings_params

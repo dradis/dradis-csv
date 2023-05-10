@@ -1,3 +1,6 @@
+v4.9.0 (XXX 2023)
+  - Fix CSV upload for files with special characters
+
 v4.8.0 (April 2023)
   - No changes
 
