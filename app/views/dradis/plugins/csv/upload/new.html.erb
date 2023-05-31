@@ -51,7 +51,7 @@
                   <%= f.select "mappings[field_attributes][#{index}][field]", issue_options, {}, class: 'form-select w-75 field-select', data: { behavior: 'issue-field-select', header: header } %>
 
                   <% evidence_options = @rtp_fields[:evidence].any? ? options_for_select(@rtp_fields[:evidence]) : options_for_select([[header, header]], disabled: header, selected: header) %>
-                  <%= f.select "mappings[field_attributes][#{index}][field]", evidence_options, {}, disabled: true, class: 'form--select w-75 field-select d-none', data: { behavior: 'evidence-field-select', header: header } %>
+                  <%= f.select "mappings[field_attributes][#{index}][field]", evidence_options, {}, disabled: true, class: 'form-select w-75 field-select d-none', data: { behavior: 'evidence-field-select', header: header } %>
 
                   <%= f.select "mappings[field_attributes][#{index}][field]", [['N/A', '']], {}, disabled: true, class: 'form-select w-75 field-select d-none', data: { behavior: 'empty-field-select', header: header } %>
                 </div>
