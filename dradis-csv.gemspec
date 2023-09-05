@@ -13,8 +13,7 @@ Gem::Specification.new do |spec|
   spec.license     = 'GPL-2'
 
   spec.authors     = ['Daniel Martin']
-  spec.email       = ['etd@nomejortu.com']
-  spec.homepage    = 'http://dradisframework.org'
+  spec.homepage    = 'http://dradis.com'
 
   spec.files       = `git ls-files`.split("\n")
   spec.executables = spec.files.grep(%r{^bin/}).map { |f| File.basename(f) }
