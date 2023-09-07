@@ -1,3 +1,6 @@
+v4.10.0 (September 2023)
+  - Update gemspec links
+
 v4.9.0 (June 2023)
   - Fix CSV upload for files with special characters
   - Update views for compatibility with Bootstrap 5
