@@ -1,5 +1,5 @@
 v4.11.0 (January 2024)
-  - No changes
+  - Disable Dradis field selects with `N/A` value
 
 v4.10.0 (September 2023)
   - Update gemspec links
