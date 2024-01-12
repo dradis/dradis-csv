@@ -68,7 +68,7 @@ document.addEventListener('turbolinks:load', function () {
           .val('Import CSV');
 
         $('[data-behavior~=view-content]').animate({
-          scrollTop: $('[data-behavior~=validation-messages]').scrollTop(),
+          scrollTop: $('[data-behavior~=validation-messages]').scrollTop()
         });
       }
 
