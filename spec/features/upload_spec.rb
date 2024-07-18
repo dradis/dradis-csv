@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 # To run, execute from Dradis main app folder:
-#   bin/rspec [dradis-plugins path]/spec/features/upload_spec.rb
+#   bin/rspec [dradis-csv path]/spec/features/upload_spec.rb
 
 describe 'upload feature', js: true do
   before do
@@ -16,9 +16,7 @@ describe 'upload feature', js: true do
 
       select 'Dradis::Plugins::CSV', from: 'uploader'
 
-      within('.custom-file') do
-        page.find('#file', visible: false).attach_file(file_path)
-      end
+      page.find('#file', visible: false).attach_file(file_path)
 
       find('body.upload.new', wait: 30)
     end
@@ -36,7 +34,7 @@ describe 'upload feature', js: true do
     end
 
     context 'mapping CSV columns' do
-      context 'when identifier not selected' do
+      context 'when the identifier not selected' do
         it 'shows a validation message on the page' do
           within all('tbody tr')[3] do
             select 'Evidence Field'
@@ -44,6 +42,18 @@ describe 'upload feature', js: true do
 
           click_button 'Import CSV'
           expect(page).to have_text('An Issue ID must be selected.')
+        end
+      end
+
+      context 'when the identifier is selected' do
+        it 'disables all the other identifier option' do
+          within all('tbody tr')[0] do
+            select 'Issue ID'
+          end
+
+          within all('tbody tr')[1] do
+            expect(find('option', text: 'Issue ID')[:disabled]).to eq('true')
+          end
         end
       end
 
@@ -241,9 +251,7 @@ describe 'upload feature', js: true do
     before do
       select 'Dradis::Plugins::CSV', from: 'uploader'
 
-      within('.custom-file') do
-        page.find('#file', visible: false).attach_file(file_path)
-      end
+      page.find('#file', visible: false).attach_file(file_path)
     end
 
     context 'uploading a malformed CSV file' do

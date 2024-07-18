@@ -17,7 +17,8 @@ window.addEventListener('job-done', function () {
 document.addEventListener('turbolinks:load', function () {
   if ($('body.upload.new').length) {
     $('[data-behavior=type-select]').on('change', function () {
-      var $nodeSelect = $('select option[value="node"]:selected').parent();
+      var $nodeSelect = $('select option[value="node"]:selected').parent(),
+          $idSelect = $('select option[value="identifier"]:selected').parent();
 
       // Disable Node Label option
       if ($nodeSelect.length) {
@@ -28,6 +29,18 @@ document.addEventListener('turbolinks:load', function () {
       } else {
         $('[data-behavior=type-select]')
           .find('option[value="node"]')
+          .removeAttr('disabled');
+      }
+
+      // Disable Issue ID Label option
+      if ($idSelect.length) {
+        $('[data-behavior=type-select]')
+          .not($idSelect)
+          .find('option[value="identifier"]')
+          .attr('disabled', 'disabled');
+      } else {
+        $('[data-behavior=type-select]')
+          .find('option[value="identifier"]')
           .removeAttr('disabled');
       }
 
