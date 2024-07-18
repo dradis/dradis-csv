@@ -1,3 +1,6 @@
+v4.13.0 (Month 2024)
+  - Prevent selecting multiple Issue ID columns
+
 v4.12.0 (May 2024)
   - Update Dradis links in README
 
