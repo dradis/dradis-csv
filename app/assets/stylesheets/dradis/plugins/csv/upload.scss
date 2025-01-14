@@ -1,39 +1,13 @@
 body.upload.new {
-  .dataTables_footer_content {
-    display: none;
-  }
-
   .form-actions {
     margin-top: 0;
   }
 
   .table {
-    margin-bottom: 0 !important;
-
     tr {
-      &.issue-type:hover {
-        .identifier {
-          opacity: 1;
-          pointer-events: all;
-        }
-      }
-
       td {
         vertical-align: middle;
-
-        .identifier {
-          opacity: 0;
-          pointer-events: none;
-
-          &:checked {
-            opacity: 1;
-          }
-        }
       }
     }
-  }
-
-  .table-wrapper {
-    max-height: 100%;
   }
 }
