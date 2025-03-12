@@ -20,6 +20,6 @@ Gem::Specification.new do |spec|
   spec.test_files  = spec.files.grep(%r{^(spec|features)/})
 
   spec.add_dependency 'dradis-plugins', '~> 4.0'
-  spec.add_development_dependency 'bundler'
+  spec.add_development_dependency 'bundler', '~> 2.0'
   spec.add_development_dependency 'rake'
 end
