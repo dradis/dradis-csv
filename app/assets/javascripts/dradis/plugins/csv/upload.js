@@ -9,12 +9,12 @@ window.addEventListener('job-done', function () {
 
       var redirectPath =
         project_path + '/addons/csv/upload/new?attachment=' + attachment;
-      Turbolinks.visit(redirectPath);
+      Turbo.visit(redirectPath);
     }
   }
 });
 
-document.addEventListener('turbolinks:load', function () {
+document.addEventListener('turbo:load', function() {
   if ($('body.upload.new').length) {
     $('[data-behavior=type-select]').on('change', function () {
       var $nodeSelect = $('select option[value="node"]:selected').parent();
