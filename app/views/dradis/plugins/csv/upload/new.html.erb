@@ -41,19 +41,19 @@
             <td><%= header %></td>
             <td>
               <div class="form-group m-0">
-                <%= f.select "mappings[field_attributes][#{index}][type]", [['Issue Field', 'issue'], ['Issue ID', 'identifier'], ['Evidence Field', 'evidence'], ['Node', 'node'], ['&#9472;'.html_safe, 'divider'], ['Do Not Import','skip']], { disabled: 'divider' }, class: 'form-select w-75', data: { behavior: 'type-select' } %>
+                <%= f.select "mappings[field_attributes][#{index}][type]", [['Issue Field', 'issue'], ['Issue ID', 'identifier'], ['Evidence Field', 'evidence'], ['Node', 'node'], ['&#9472;'.html_safe, 'divider'], ['Do Not Import','skip']], { disabled: 'divider' }, class: 'form-select w-75', data: { behavior: 'type-select', 'combobox-config': 'no-combobox' } %>
               </div>
             </td>
             <td>
               <% if @rtp_fields %>
                 <div>
                   <% issue_options = @rtp_fields[:issue].any? ? options_for_select(@rtp_fields[:issue]) : options_for_select([[header, header]], disabled: header, selected: header) %>
-                  <%= f.select "mappings[field_attributes][#{index}][field]", issue_options, {}, class: 'form-select w-75 field-select', data: { behavior: 'dradis-field-select issue-field-select', header: header } %>
+                  <%= f.select "mappings[field_attributes][#{index}][field]", issue_options, {}, class: 'form-select w-75 field-select', data: { behavior: 'dradis-field-select issue-field-select', header: header, 'combobox-config': 'no-combobox' } %>
 
                   <% evidence_options = @rtp_fields[:evidence].any? ? options_for_select(@rtp_fields[:evidence]) : options_for_select([[header, header]], disabled: header, selected: header) %>
-                  <%= f.select "mappings[field_attributes][#{index}][field]", evidence_options, {}, disabled: true, class: 'form-select w-75 field-select d-none', data: { behavior: 'dradis-field-select evidence-field-select', header: header } %>
+                  <%= f.select "mappings[field_attributes][#{index}][field]", evidence_options, {}, disabled: true, class: 'form-select w-75 field-select d-none', data: { behavior: 'dradis-field-select evidence-field-select', header: header, 'combobox-config': 'no-combobox' } %>
 
-                  <%= f.select "mappings[field_attributes][#{index}][field]", [['N/A', '']], {}, disabled: true, class: 'form-select w-75 field-select d-none', data: { behavior: 'dradis-field-select empty-field-select', header: header } %>
+                  <%= f.select "mappings[field_attributes][#{index}][field]", [['N/A', '']], {}, disabled: true, class: 'form-select w-75 field-select d-none', data: { behavior: 'dradis-field-select empty-field-select', header: header, 'combobox-config': 'no-combobox' } %>
                 </div>
               <% else %>
                 <span data-behavior="field-label" data-header="<%= header.delete(" \t\r\n") %>" ><%= header.delete(" \t\r\n") %></span>

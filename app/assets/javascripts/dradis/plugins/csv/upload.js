@@ -15,7 +15,7 @@ window.addEventListener('job-done', function () {
 });
 
 document.addEventListener('turbo:load', function() {
-  if ($('body.upload.new').length) {
+  if ($('body.dradis-plugins-csv-upload.new').length) {
     $('[data-behavior=type-select]').on('change', function () {
       var $nodeSelect = $('select option[value="node"]:selected').parent();
 
