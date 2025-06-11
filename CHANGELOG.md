@@ -1,5 +1,5 @@
 v4.16.1 (June 2025)
-  - Fix field mapping when uploading a CSV file
+  - Disable combobox in field mapping when uploading a CSV file
 
 v4.16.0 (May 2025)
   - Update manifest for compatibility with Hera layout.
