@@ -1,3 +1,6 @@
+v4.17.0 (July 2025)
+  - No changes
+
 v4.16.1 (June 2025)
   - Disable combobox in field mapping when uploading a CSV file
 
