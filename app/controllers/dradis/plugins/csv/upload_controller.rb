@@ -67,7 +67,7 @@ module Dradis::Plugins::CSV
 
     def state
       @state ||=
-        Issue.states.keys.include?(params[:state]) ? params[:state] : 'draft'
+        Issue.states.key?(params[:state]) ? params[:state] : 'draft'
     end
   end
 end
