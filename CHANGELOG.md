@@ -1,3 +1,6 @@
+v4.20.0 (Month 2026)
+  -  Fix state selection not being applied correctly
+
 v4.19.0 (November 2025)
   - No changes
 

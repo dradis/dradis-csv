@@ -13,7 +13,7 @@ module Dradis::Plugins::CSV
     #   '2' => { 'type' => 'identifier' },
     #   '3' => { 'type' => 'evidence', 'field' => 'Port' }
     # }
-    def perform(default_user_id:, file:, mappings:, project_id:, uid:)
+    def perform(default_user_id:, file:, mappings:, project_id:, state:, uid:)
       logger = Log.new(uid: uid)
       logger.write { "Job id is #{job_id}." }
 
@@ -21,7 +21,8 @@ module Dradis::Plugins::CSV
         default_user_id: default_user_id,
         logger: logger,
         plugin: self.class.module_parent,
-        project_id: project_id
+        project_id: project_id,
+        state: state
       )
 
       importer.import_csv(file: file, mappings: mappings)

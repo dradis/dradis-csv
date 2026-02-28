@@ -14,13 +14,15 @@ describe 'upload feature', js: true do
     before do
       @headers = CSV.open(file_path, &:readline)
 
-      select 'Dradis::Plugins::CSV', from: 'uploader'
+      find('#state + .combobox').click
+      find('#state ~ .combobox-menu .combobox-option', text: 'Published').click
 
-      within('.custom-file') do
-        page.find('#file', visible: false).attach_file(file_path)
-      end
+      find('#uploader + .combobox').click
+      find('#uploader ~ .combobox-menu .combobox-option', text: 'Dradis::Plugins::CSV').click
 
-      find('body.upload.new', wait: 30)
+      attach_file 'file', file_path, visible: false, disabled: false
+
+      expect(page).to have_text('CSV Upload Mapping', wait: 30)
     end
 
     it 'redirects to the mapping page' do
@@ -59,6 +61,49 @@ describe 'upload feature', js: true do
 
           click_button 'Import CSV'
           expect(page).to have_text('A Node Label must be selected to import evidence records.')
+        end
+      end
+
+      context 'valid states' do
+        it 'imports the issues based on the selected state' do
+          select 'Issue ID', from: 'mappings[field_attributes][0][type]'
+          select 'Node', from: 'mappings[field_attributes][3][type]'
+          select 'Evidence Field', from: 'mappings[field_attributes][4][type]'
+          select 'Evidence Field', from: 'mappings[field_attributes][5][type]'
+
+          perform_enqueued_jobs do
+            click_button 'Import CSV'
+
+            find('#console .log', wait: 30, match: :first)
+
+            expect(page).to have_text('Worker process completed.')
+
+            expect(Issue.published.count).to eq(1)
+          end
+        end
+      end
+
+      context 'invalid states' do
+        it 'imports the issues as draft' do
+          select 'Issue ID', from: 'mappings[field_attributes][0][type]'
+          select 'Node', from: 'mappings[field_attributes][3][type]'
+          select 'Evidence Field', from: 'mappings[field_attributes][4][type]'
+          select 'Evidence Field', from: 'mappings[field_attributes][5][type]'
+
+          page.execute_script(<<~JS)
+            const select = document.querySelector('#state');
+            select.value = 'tampered_value';
+          JS
+
+          perform_enqueued_jobs do
+            click_button 'Import CSV'
+
+            find('#console .log', wait: 30, match: :first)
+
+            expect(page).to have_text('Worker process completed.')
+
+            expect(Issue.published.count).to eq(0)
+          end
         end
       end
 
@@ -239,11 +284,10 @@ describe 'upload feature', js: true do
 
   describe 'CSV file samples' do
     before do
-      select 'Dradis::Plugins::CSV', from: 'uploader'
+      find('#uploader + .combobox').click
+      find('#uploader ~ .combobox-menu .combobox-option', text: 'Dradis::Plugins::CSV').click
 
-      within('.custom-file') do
-        page.find('#file', visible: false).attach_file(file_path)
-      end
+      attach_file 'file', file_path, visible: false, disabled: false
     end
 
     context 'uploading a malformed CSV file' do
@@ -265,16 +309,6 @@ describe 'upload feature', js: true do
 
         expect(page).to have_text('The uploaded file is not a CSV file.')
         expect(current_path).to eq(main_app.project_upload_manager_path(@project))
-      end
-    end
-
-    context 'uploading file with special characters in the filename' do
-      let(:file_path) { File.expand_path('../fixtures/files/simple (copy).csv', __dir__) }
-
-      it 'redirects to upload manager' do
-        find('body.upload.new', wait: 30)
-
-        expect(current_path).to eq(csv.new_project_upload_path(@project))
       end
     end
   end

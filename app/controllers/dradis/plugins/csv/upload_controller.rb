@@ -20,6 +20,7 @@ module Dradis::Plugins::CSV
         file: @attachment.fullpath.to_s,
         mappings: mappings_params[:field_attributes].to_h,
         project_id: current_project.id,
+        state: state,
         uid: params[:log_uid].to_i
       )
     end
@@ -62,6 +63,11 @@ module Dradis::Plugins::CSV
 
     def mappings_params
       params.require(:mappings).permit(field_attributes: [:field, :type])
+    end
+
+    def state
+      @state ||=
+        Issue.states.key?(params[:state]) ? params[:state] : 'draft'
     end
   end
 end
