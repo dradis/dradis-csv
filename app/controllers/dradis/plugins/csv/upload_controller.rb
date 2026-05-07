@@ -65,7 +65,7 @@ module Dradis::Plugins::CSV
     end
 
     def load_saved_mappings
-      @saved_mappings = ::Mapping.where(component: 'csv').includes(:mapping_fields)
+      @saved_mappings = defined?(::Mapping) ? ::Mapping.where(component: 'csv').includes(:mapping_fields) : []
     end
 
     def build_mapping_fields(mapping, headers)
@@ -103,6 +103,8 @@ module Dradis::Plugins::CSV
     end
 
     def save_csv_mapping
+      return unless defined?(::Mapping)
+
       rtp = current_project.report_template_properties
       return unless rtp
 

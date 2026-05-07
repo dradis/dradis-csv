@@ -45,6 +45,22 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
         evidence = node.evidence.first
         expect(evidence.fields).to eq({ 'Label' => '10.0.0.1', 'Title' => '(No #[Title]# field)', 'MyLocation' => '10.0.0.1' })
       end
+
+      context 'when a custom field is selected' do
+        let(:mappings) do
+          {
+            '0' => { 'type' => 'identifier' },
+            '1' => { 'type' => 'issue', 'field' => 'Custom Field', 'custom_field' => 'MyCustomField' }
+          }
+        end
+
+        it 'uses the custom field name as the Dradis field' do
+          import_csv
+
+          issue = Issue.first
+          expect(issue.fields).to include('MyCustomField' => 'Test CSV')
+        end
+      end
     end
 
     context 'when project does not have RTP' do

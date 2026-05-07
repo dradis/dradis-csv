@@ -82,15 +82,17 @@
       </tbody>
     </table>
     <div class="form-actions">
-      <div class="mb-2">
-        <div class="form-check">
-          <%= check_box_tag :save_mapping, '1', false, class: 'form-check-input', data: { behavior: 'save-mapping-checkbox' } %>
-          <%= label_tag :save_mapping, 'Save this mapping for later', class: 'form-check-label' %>
+      <% if defined?(::Mapping) %>
+        <div class="mb-2">
+          <div class="form-check">
+            <%= check_box_tag :save_mapping, '1', false, class: 'form-check-input', data: { behavior: 'save-mapping-checkbox' } %>
+            <%= label_tag :save_mapping, 'Save this mapping for later', class: 'form-check-label' %>
+          </div>
+          <div class="mt-2 d-none" data-behavior="save-mapping-name">
+            <%= text_field_tag :mapping_source_name, '', class: 'form-control w-auto', placeholder: 'Mapping name (e.g. Prowler, ScoutSuite)' %>
+          </div>
         </div>
-        <div class="mt-2 d-none" data-behavior="save-mapping-name">
-          <%= text_field_tag :mapping_source_name, '', class: 'form-control w-auto', placeholder: 'Mapping name (e.g. Prowler, ScoutSuite)' %>
-        </div>
-      </div>
+      <% end %>
       <%= f.submit 'Import CSV', class: 'btn btn-primary me-1', data: { disable_with: false } %> or
       <%= link_to 'Cancel', main_app.project_upload_manager_path(current_project) %>
     </div>
