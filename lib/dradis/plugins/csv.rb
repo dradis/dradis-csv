@@ -8,4 +8,5 @@ end
 
 require 'dradis/plugins/csv/engine'
 require 'dradis/plugins/csv/importer'
+require 'dradis/plugins/csv/mapping'
 require 'dradis/plugins/csv/version'

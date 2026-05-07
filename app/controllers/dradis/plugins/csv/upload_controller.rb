@@ -5,6 +5,7 @@ module Dradis::Plugins::CSV
     before_action :load_attachment, only: [:new, :create]
     before_action :load_rtp_fields, only: [:new]
     before_action :load_csv_headers, only: [:new]
+    before_action :load_saved_mappings, only: [:new]
 
     def new
       @default_columns = ['Column Header', 'Entity', 'Dradis Field']
@@ -13,6 +14,8 @@ module Dradis::Plugins::CSV
     end
 
     def create
+      save_csv_mapping if save_mapping?
+
       job_logger.write 'Enqueueing job to start in the background.'
 
       MappingImportJob.perform_later(
@@ -61,8 +64,61 @@ module Dradis::Plugins::CSV
         end
     end
 
+    def load_saved_mappings
+      @saved_mappings = ::Mapping.where(component: 'csv').includes(:mapping_fields)
+    end
+
+    def build_mapping_fields(mapping, headers)
+      mappings_params[:field_attributes].each do |index, attrs|
+        type = attrs['type']
+        header = headers[index.to_i]
+
+        next if type == 'skip' || header.blank?
+
+        destination_field = destination_field_for(type, attrs['field'], attrs['custom_field'])
+        next if destination_field.blank?
+
+        ::MappingField.create!(
+          content: header,
+          destination_field: destination_field,
+          mapping: mapping,
+          source_field: header
+        )
+      end
+    end
+
+    def destination_field_for(type, field, custom_field = nil)
+      name = field == 'Custom Field' ? custom_field : field
+      case type
+      when 'node'       then 'Node Label'
+      when 'identifier' then 'Issue ID'
+      when 'issue'      then "Issue: #{name}" if name.present?
+      when 'evidence'   then "Evidence: #{name}" if name.present?
+      else field
+      end
+    end
+
     def mappings_params
-      params.require(:mappings).permit(field_attributes: [:field, :type])
+      params.require(:mappings).permit(field_attributes: %i[custom_field field type])
+    end
+
+    def save_csv_mapping
+      rtp = current_project.report_template_properties
+      return unless rtp
+
+      mapping = ::Mapping.find_or_initialize_by(
+        component: 'csv',
+        source: params[:mapping_source_name]
+      )
+      mapping.destination = "rtp_#{rtp.id}"
+      return unless mapping.save
+
+      mapping.mapping_fields.destroy_all
+      build_mapping_fields(mapping, ::CSV.open(@attachment.fullpath, &:readline))
+    end
+
+    def save_mapping?
+      params[:save_mapping] == '1' && params[:mapping_source_name].present?
     end
 
     def state

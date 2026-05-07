@@ -1,3 +1,6 @@
+v5.X.X (XXXX 2026)
+  - Add CSV to the Mappings Manager
+
 v5.0.0 (March 2026)
   - No changes
 

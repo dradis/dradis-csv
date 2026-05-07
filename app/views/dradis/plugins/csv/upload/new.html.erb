@@ -22,6 +22,21 @@
     </div>
   </div>
 
+  <% if @saved_mappings.any? %>
+    <div class="mb-4" data-behavior="saved-mapping-selector">
+      <label class="form-label" for="saved_mapping">Load Saved Mapping</label>
+      <select id="saved_mapping" class="form-select" data-behavior="saved-mapping-select">
+        <option value="">— Select a saved mapping —</option>
+        <% @saved_mappings.each do |mapping| %>
+          <option value="<%= mapping.id %>"
+                  data-fields="<%= mapping.mapping_fields.map { |mf| { source_field: mf.source_field, destination_field: mf.destination_field } }.to_json %>">
+            <%= mapping.source %>
+          </option>
+        <% end %>
+      </select>
+    </div>
+  <% end %>
+
   <%= form_with url: project_upload_index_path(current_project, format: :js), method: :post, local: false, data: { behavior: 'mapping-form' } do |f| %>
     <%= hidden_field_tag 'log_uid', @log_uid %>
     <%= hidden_field_tag 'job_id', params[:job_id] %>
@@ -48,13 +63,15 @@
             <td>
               <% if @rtp_fields %>
                 <div>
-                  <% issue_options = @rtp_fields[:issue].any? ? options_for_select(@rtp_fields[:issue]) : options_for_select([[header, header]], disabled: header, selected: header) %>
+                  <% issue_options = @rtp_fields[:issue].any? ? options_for_select(@rtp_fields[:issue] + ['Custom Field']) : options_for_select([[header, header]], disabled: header, selected: header) %>
                   <%= f.select "mappings[field_attributes][#{index}][field]", issue_options, {}, class: 'form-select w-75 field-select', data: { behavior: 'dradis-field-select issue-field-select', header: header, 'combobox-config': 'no-combobox' } %>
 
-                  <% evidence_options = @rtp_fields[:evidence].any? ? options_for_select(@rtp_fields[:evidence]) : options_for_select([[header, header]], disabled: header, selected: header) %>
+                  <% evidence_options = @rtp_fields[:evidence].any? ? options_for_select(@rtp_fields[:evidence] + ['Custom Field']) : options_for_select([[header, header]], disabled: header, selected: header) %>
                   <%= f.select "mappings[field_attributes][#{index}][field]", evidence_options, {}, disabled: true, class: 'form-select w-75 field-select d-none', data: { behavior: 'dradis-field-select evidence-field-select', header: header, 'combobox-config': 'no-combobox' } %>
 
                   <%= f.select "mappings[field_attributes][#{index}][field]", [['N/A', '']], {}, disabled: true, class: 'form-select w-75 field-select d-none', data: { behavior: 'dradis-field-select empty-field-select', header: header, 'combobox-config': 'no-combobox' } %>
+
+                  <%= f.text_field "mappings[field_attributes][#{index}][custom_field]", class: 'form-control w-75 mt-1 d-none', placeholder: 'Custom field name', data: { behavior: 'custom-field-input' } %>
                 </div>
               <% else %>
                 <span data-behavior="field-label" data-header="<%= header.delete(" \t\r\n") %>" ><%= header.delete(" \t\r\n") %></span>
@@ -65,6 +82,15 @@
       </tbody>
     </table>
     <div class="form-actions">
+      <div class="mb-2">
+        <div class="form-check">
+          <%= check_box_tag :save_mapping, '1', false, class: 'form-check-input', data: { behavior: 'save-mapping-checkbox' } %>
+          <%= label_tag :save_mapping, 'Save this mapping for later', class: 'form-check-label' %>
+        </div>
+        <div class="mt-2 d-none" data-behavior="save-mapping-name">
+          <%= text_field_tag :mapping_source_name, '', class: 'form-control w-auto', placeholder: 'Mapping name (e.g. Prowler, ScoutSuite)' %>
+        </div>
+      </div>
       <%= f.submit 'Import CSV', class: 'btn btn-primary me-1', data: { disable_with: false } %> or
       <%= link_to 'Cancel', main_app.project_upload_manager_path(current_project) %>
     </div>
