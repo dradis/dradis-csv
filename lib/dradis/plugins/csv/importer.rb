@@ -40,9 +40,15 @@ module Dradis::Plugins::CSV
       mappings.map do |index, mapping|
         next if project.report_template_properties && mapping['field'].blank?
 
-        field_name = project.report_template_properties ? mapping['field'] : row.headers[index.to_i].delete(" \t\r\n")
-        field_value = row[index.to_i]
-        "#[#{field_name}]#\n#{field_value}"
+        field_name = if project.report_template_properties
+          mapping['field'] == 'Custom Field' ? mapping['custom_field'] : mapping['field']
+        else
+          row.headers[index.to_i].delete(" \t\r\n")
+        end
+
+        next if field_name.blank?
+
+        "#[#{field_name}]#\n#{row[index.to_i]}"
       end.compact.join("\n\n")
     end
 

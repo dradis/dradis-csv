@@ -77,10 +77,108 @@ document.addEventListener('turbo:load', function() {
       return valid;
     });
 
+    $(document).on('change', '[data-behavior~=dradis-field-select]', function () {
+      const $input = $(this).closest('td').find('[data-behavior~=custom-field-input]');
+      $input.toggleClass('d-none', $(this).val() !== 'Custom Field');
+      if ($(this).val() !== 'Custom Field') $input.val('');
+    });
+
+    $('[data-behavior~=save-mapping-checkbox]').on('change', function () {
+      $('[data-behavior~=save-mapping-name]').toggleClass('d-none', !$(this).is(':checked'));
+    });
+
+    $('[data-behavior~=saved-mapping-select]').on('change', function () {
+      const selectedOption = $(this).find('option:selected');
+      const fields = selectedOption.data('fields') || [];
+
+      // Reset every row to 'skip' so unmatched columns are excluded and
+      // re-applying a different mapping always starts from a clean state.
+      $('table tbody tr').each(function () {
+        const $row = $(this);
+        $row.find('[data-behavior~=type-select]').val('skip');
+        $row.removeClass('issue-type');
+        $row.find('[data-behavior~=custom-field-input]').addClass('d-none').val('');
+        $row.find('[data-behavior~=dradis-field-select]').attr('disabled', 'disabled').addClass('d-none');
+        $row.find('[data-behavior~=empty-field-select]').attr('disabled', 'disabled').removeClass('d-none');
+      });
+      $('[data-behavior~=type-select]').find('option[value="node"]').removeAttr('disabled');
+
+      const appliedRows = new Set();
+
+      fields.forEach(function (field) {
+        const sourceField = field.source_field;
+        const destField = field.destination_field;
+
+        let type, fieldName;
+        if (destField === 'Node Label') {
+          type = 'node';
+        } else if (destField === 'Issue ID') {
+          type = 'identifier';
+        } else if (destField.startsWith('Evidence: ')) {
+          type = 'evidence';
+          fieldName = destField.slice('Evidence: '.length);
+        } else if (destField.startsWith('Issue: ')) {
+          type = 'issue';
+          fieldName = destField.slice('Issue: '.length);
+        } else {
+          type = 'issue';
+          fieldName = destField;
+        }
+
+        $('table tbody tr').each(function (rowIndex) {
+          if (appliedRows.has(rowIndex)) return true;
+          const header = $(this).find('td:first').text().trim();
+          if (header === sourceField) {
+            appliedRows.add(rowIndex);
+            const $row = $(this);
+
+            const typeSelectEl = $row.find('[data-behavior~=type-select]')[0];
+            if (typeSelectEl) typeSelectEl.value = type;
+            $row.toggleClass('issue-type', type === 'issue');
+
+            $row.find('[data-behavior~=custom-field-input]').addClass('d-none').val('');
+            $row.find('[data-behavior~=dradis-field-select]').attr('disabled', 'disabled').addClass('d-none');
+
+            if (type === 'issue') {
+              $row.find('[data-behavior~=issue-field-select]').removeAttr('disabled').removeClass('d-none');
+            } else if (type === 'evidence') {
+              $row.find('[data-behavior~=evidence-field-select]').removeAttr('disabled').removeClass('d-none');
+            } else {
+              $row.find('[data-behavior~=empty-field-select]').attr('disabled', 'disabled').removeClass('d-none');
+            }
+
+            if (type === 'node') {
+              $('[data-behavior~=type-select]').not($row.find('[data-behavior~=type-select]'))
+                .find('option[value="node"]').attr('disabled', 'disabled');
+            }
+
+            setTimeout(function () {
+              if (type === 'issue' || type === 'evidence') {
+                const behavior = type === 'issue' ? 'issue-field-select' : 'evidence-field-select';
+                const $fieldSelect = $row.find(`[data-behavior~=${behavior}]`);
+                if (fieldName === 'Custom Field') {
+                  $fieldSelect.val('Custom Field').trigger('change');
+                } else {
+                  $fieldSelect.val(fieldName);
+                  if (!$fieldSelect.val()) {
+                    $fieldSelect.val('Custom Field').trigger('change');
+                    $row.find('[data-behavior~=custom-field-input]').val(fieldName);
+                  }
+                }
+              }
+            }, 0);
+            return false;
+          }
+        });
+      });
+    });
+
     // Private methods
 
     function _setDradisFieldSelect($select) {
       var $row = $select.closest('tr');
+
+      $row.find('[data-behavior~=custom-field-input]').addClass('d-none').val('');
 
       $row
         .find('[data-behavior~=dradis-field-select]')

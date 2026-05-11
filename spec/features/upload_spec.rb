@@ -282,6 +282,102 @@ describe 'upload feature', js: true do
     end
   end
 
+  context 'saving a mapping', js: true do
+    let(:file_path) { File.expand_path('../fixtures/files/simple.csv', __dir__) }
+    let(:rtp) do
+      create(:report_template_properties,
+        issue_fields: [{ name: 'Title', type: :string, default: true }],
+        evidence_fields: []
+      )
+    end
+
+    before do
+      @project.update(report_template_properties: rtp)
+
+      find('#state + .combobox').click
+      find('#state ~ .combobox-menu .combobox-option', text: 'Published').click
+
+      find('#uploader + .combobox').click
+      find('#uploader ~ .combobox-menu .combobox-option', text: 'Dradis::Plugins::CSV').click
+
+      attach_file 'file', file_path, visible: false, disabled: false
+      expect(page).to have_text('CSV Upload Mapping', wait: 30)
+    end
+
+    it 'creates a Mapping record when checkbox is checked and name is provided' do
+      select 'Issue ID', from: 'mappings[field_attributes][0][type]'
+      select 'Node', from: 'mappings[field_attributes][3][type]'
+      check 'save_mapping'
+      fill_in 'mapping_source_name', with: 'Web App Scan'
+
+      expect do
+        perform_enqueued_jobs { click_button 'Import CSV' }
+      end.to change(Mapping, :count).by(1)
+
+      mapping = Mapping.last
+      expect(mapping.source).to eq('Web App Scan')
+      expect(mapping.component).to eq('csv')
+      expect(mapping.mapping_fields.pluck(:destination_field)).to include('Issue ID', 'Node Label')
+    end
+
+    it 'does not create a Mapping record when checkbox is unchecked' do
+      select 'Issue ID', from: 'mappings[field_attributes][0][type]'
+      select 'Node', from: 'mappings[field_attributes][3][type]'
+
+      expect do
+        perform_enqueued_jobs { click_button 'Import CSV' }
+      end.not_to change(Mapping, :count)
+    end
+  end
+
+  context 'loading a saved mapping', js: true do
+    let(:file_path) { File.expand_path('../fixtures/files/simple.csv', __dir__) }
+    let(:rtp) do
+      create(:report_template_properties,
+        issue_fields: [{ name: 'Title', type: :string, default: true }],
+        evidence_fields: []
+      )
+    end
+    let!(:saved_mapping) do
+      mapping = Mapping.create!(
+        component: 'csv',
+        source: 'Test Mapping',
+        destination: "rtp_#{rtp.id}"
+      )
+      MappingField.create!(mapping: mapping, source_field: 'Title', destination_field: 'Issue ID', content: 'Title')
+      MappingField.create!(mapping: mapping, source_field: 'Description', destination_field: 'Issue: Title', content: 'Description')
+      mapping
+    end
+
+    before do
+      @project.update(report_template_properties: rtp)
+
+      find('#state + .combobox').click
+      find('#state ~ .combobox-menu .combobox-option', text: 'Published').click
+
+      find('#uploader + .combobox').click
+      find('#uploader ~ .combobox-menu .combobox-option', text: 'Dradis::Plugins::CSV').click
+
+      attach_file 'file', file_path, visible: false, disabled: false
+      expect(page).to have_text('CSV Upload Mapping', wait: 30)
+    end
+
+    it 'auto-fills rows matching the saved mapping' do
+      find('#saved_mapping + .combobox').click
+      find('#saved_mapping ~ .combobox-menu .combobox-option', text: 'Test Mapping').click
+
+      expect(page).to have_select('mappings[field_attributes][0][type]', selected: 'Issue ID')
+      expect(page).to have_select('mappings[field_attributes][1][type]', selected: 'Issue Field')
+    end
+
+    it 'resets rows not in the mapping to Do Not Import' do
+      find('#saved_mapping + .combobox').click
+      find('#saved_mapping ~ .combobox-menu .combobox-option', text: 'Test Mapping').click
+
+      expect(page).to have_select('mappings[field_attributes][2][type]', selected: 'Do Not Import')
+    end
+  end
+
   describe 'CSV file samples' do
     before do
       find('#uploader + .combobox').click
