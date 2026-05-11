@@ -308,14 +308,14 @@ describe 'upload feature', js: true do
       select 'Issue ID', from: 'mappings[field_attributes][0][type]'
       select 'Node', from: 'mappings[field_attributes][3][type]'
       check 'save_mapping'
-      fill_in 'mapping_source_name', with: 'Prowler'
+      fill_in 'mapping_source_name', with: 'Web App Scan'
 
       expect do
         perform_enqueued_jobs { click_button 'Import CSV' }
       end.to change(Mapping, :count).by(1)
 
       mapping = Mapping.last
-      expect(mapping.source).to eq('Prowler')
+      expect(mapping.source).to eq('Web App Scan')
       expect(mapping.component).to eq('csv')
       expect(mapping.mapping_fields.pluck(:destination_field)).to include('Issue ID', 'Node Label')
     end

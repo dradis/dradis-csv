@@ -26,7 +26,7 @@
     <div class="mb-4" data-behavior="saved-mapping-selector">
       <label class="form-label" for="saved_mapping">Load Saved Mapping</label>
       <select id="saved_mapping" class="form-select" data-behavior="saved-mapping-select">
-        <option value="">— Select a saved mapping —</option>
+        <option value="">Choose a saved mapping</option>
         <% @saved_mappings.each do |mapping| %>
           <option value="<%= mapping.id %>"
                   data-fields="<%= mapping.mapping_fields.map { |mf| { source_field: mf.source_field, destination_field: mf.destination_field } }.to_json %>">
@@ -83,13 +83,16 @@
     </table>
     <div class="form-actions">
       <% if defined?(::Mapping) %>
-        <div class="mb-2">
+        <div class="border-bottom mb-3 pb-2">
           <div class="form-check">
             <%= check_box_tag :save_mapping, '1', false, class: 'form-check-input', data: { behavior: 'save-mapping-checkbox' } %>
             <%= label_tag :save_mapping, 'Save this mapping for later', class: 'form-check-label' %>
           </div>
-          <div class="mt-2 d-none" data-behavior="save-mapping-name">
-            <%= text_field_tag :mapping_source_name, '', class: 'form-control w-auto', placeholder: 'Mapping name (e.g. Prowler, ScoutSuite)' %>
+          <div class="my-2 d-none" data-behavior="save-mapping-name">
+            <div class="ms-4">
+              <%= label_tag :mapping_source_name, 'Mapping Name', class: 'form-label' %>
+              <%= text_field_tag :mapping_source_name, '', class: 'form-control', placeholder: 'e.g. Web App Scan, Network Scan, Tool Name' %>
+            </div>
           </div>
         </div>
       <% end %>
