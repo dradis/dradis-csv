@@ -17,67 +17,6 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
     instance.import_csv(file: file, mappings: mappings)
   end
 
-  describe '#import' do
-    let(:headers) { ::CSV.open(file, &:readline) }
-    let(:rtp) { create(:report_template_properties) }
-    let(:destination) { rtp.as_mapping_destination }
-
-    let(:issue_source) do
-      Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :issue)
-    end
-    let(:evidence_source) do
-      Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :evidence)
-    end
-
-    before do
-      project.update(report_template_properties: rtp)
-    end
-
-    context 'when a saved mapping matches the CSV format' do
-      before do
-        issue_mapping = Mapping.create!(
-          component: 'csv', source: issue_source, destination: destination
-        )
-        issue_mapping.mapping_fields.create!(
-          source_field: 'Id', destination_field: 'plugin_id', content: '{{ csv[Id] }}'
-        )
-        issue_mapping.mapping_fields.create!(
-          source_field: 'Title', destination_field: 'MyTitle', content: '{{ csv[Title] }}'
-        )
-
-        evidence_mapping = Mapping.create!(
-          component: 'csv', source: evidence_source, destination: destination
-        )
-        evidence_mapping.mapping_fields.create!(
-          source_field: 'Host', destination_field: 'node_label', content: '{{ csv[Host] }}'
-        )
-        evidence_mapping.mapping_fields.create!(
-          source_field: 'Location', destination_field: 'MyLocation', content: '{{ csv[Location] }}'
-        )
-      end
-
-      it 'creates issues, nodes and evidence from the saved mapping' do
-        expect(instance.import(file: file)).to eq(true)
-
-        issue = Issue.first
-        expect(issue.fields).to eq({ 'MyTitle' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1' })
-
-        node = issue.affected.first
-        expect(node.label).to eq('10.0.0.1')
-
-        evidence = node.evidence.first
-        expect(evidence.fields).to eq({ 'Label' => '10.0.0.1', 'Title' => '(No #[Title]# field)', 'MyLocation' => '10.0.0.1' })
-      end
-    end
-
-    context 'when no saved mapping matches the CSV format' do
-      it 'does not create any records and returns false' do
-        expect(instance.import(file: file)).to eq(false)
-        expect(Issue.count).to eq(0)
-      end
-    end
-  end
-
   describe '#import_csv' do
     context 'when project has RTP' do
       let(:mappings) do

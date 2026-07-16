@@ -54,6 +54,27 @@ RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
       expect { builder.save }.not_to change { Mapping.count }
     end
 
+    it 'replaces the fields of an existing mapping with the new assignments' do
+      builder.save
+
+      updated_builder = described_class.new(
+        column_mappings: {
+          '0' => { 'type' => 'identifier' },
+          '1' => { 'type' => 'skip' }
+        },
+        destination: destination,
+        headers: headers
+      )
+
+      expect { updated_builder.save }.to change { Mapping.count }.by(-1)
+
+      issue_mapping = Mapping.find_by(
+        component: 'csv', source: issue_source, destination: destination
+      )
+      expect(issue_mapping.mapping_fields.pluck(:destination_field)).to eq(['plugin_id'])
+      expect(Mapping.find_by(source: evidence_source)).to be_nil
+    end
+
     context 'without a destination' do
       let(:destination) { nil }
 

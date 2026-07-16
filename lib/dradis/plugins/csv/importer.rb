@@ -11,70 +11,14 @@ module Dradis::Plugins::CSV
       }
     end
 
-    # Imports a CSV file using a Mapping previously saved through the column
-    # mapper (see MappingBuilder).
+    # CSV files are imported through the column mapper in the web UI (see
+    # UploadController), which enqueues MappingImportJob with the submitted
+    # column assignments. This generic entry point (e.g. API uploads) is not
+    # supported.
     def import(params = {})
-      file = params[:file]
-      filename = File.basename(file)
+      logger.fatal { 'CSV uploads must be mapped through the Upload Manager in the web UI.' }
 
-      headers = ::CSV.open(file, &:readline)
-
-      issue_source = Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :issue)
-      evidence_source = Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :evidence)
-
-      issue_fields = stored_mapping_fields(issue_source)
-      evidence_fields = stored_mapping_fields(evidence_source)
-
-      if issue_fields.empty? && evidence_fields.empty?
-        error = 'No saved mapping matches this CSV format. Re-upload the '\
-                'file and use the column mapper to create one.'
-        logger.fatal { error }
-        return false
-      end
-
-      id_field = issue_fields.find { |field| field.destination_field == Mapping::IDENTIFIER_FIELD }
-      node_field = evidence_fields.find { |field| field.destination_field == Mapping::NODE_LABEL_FIELD }
-
-      issue_content_fields = issue_fields - [id_field].compact
-      evidence_content_fields = evidence_fields - [node_field].compact
-
-      logger.info { 'Applying saved mapping to CSV file...' }
-
-      ::CSV.foreach(file, headers: true).with_index do |row, index|
-        field_processor = FieldProcessor.new(data: row)
-
-        csv_id = id_field && field_processor.value(field: id_field.source_field)
-        csv_id = "#{filename}-#{index}" if csv_id.blank?
-
-        logger.info { "\t => Creating new issue (plugin_id: #{csv_id})" }
-        issue_text =
-          if issue_content_fields.any?
-            mapping_service.apply_mapping(
-              source: issue_source, data: row, mapping_fields: issue_content_fields
-            )
-          else
-            ''
-          end
-        issue = content_service.create_issue(text: issue_text, id: csv_id)
-
-        node_label = node_field && field_processor.value(field: node_field.source_field)
-        next if node_label.blank?
-
-        logger.info { "\t\t => Creating evidence: (node: #{node_label}, plugin_id: #{csv_id})" }
-        node = content_service.create_node(label: node_label, type: :host)
-        evidence_content =
-          if evidence_content_fields.any?
-            mapping_service.apply_mapping(
-              source: evidence_source, data: row, mapping_fields: evidence_content_fields
-            )
-          else
-            ''
-          end
-        content_service.create_evidence(issue: issue, node: node, content: evidence_content)
-      end
-
-      logger.info { 'Done.' }
-      true
+      false
     end
 
     def import_csv(params)
@@ -102,15 +46,6 @@ module Dradis::Plugins::CSV
     private
 
     attr_accessor :evidence_mappings, :issue_lookup, :issue_mappings, :node_index
-
-    def stored_mapping_fields(source)
-      mapping = Dradis::Plugins::CSV.get_mapping(
-        source: source,
-        destination: mapping_service.destination
-      )
-
-      mapping ? mapping.mapping_fields.to_a : []
-    end
 
     def build_text(mappings:, row:)
       mappings.map do |index, mapping|

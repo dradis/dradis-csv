@@ -16,16 +16,6 @@ window.addEventListener('job-done', function () {
   }
 });
 
-document.addEventListener('turbo:load', function () {
-  var $autoImport = $('[data-behavior~=csv-auto-import]');
-
-  if ($autoImport.length) {
-    ConsoleUpdater.jobId = $autoImport.data('logUid');
-    ConsoleUpdater.parsing = true;
-    setTimeout(ConsoleUpdater.updateConsole, 1000);
-  }
-});
-
 document.addEventListener('turbo:load', function() {
   if ($('body.dradis-plugins-csv-upload.new').length) {
     $('[data-behavior=type-select]').on('change', function () {
@@ -86,6 +76,13 @@ document.addEventListener('turbo:load', function() {
 
       return valid;
     });
+
+    // When the server pre-selected the dropdowns from a saved mapping, run
+    // the change handler once per row to sync the dependent state (visible
+    // field selects, row classes, node option availability).
+    if ($('[data-behavior~=csv-prefilled]').length) {
+      $('[data-behavior=type-select]').trigger('change');
+    }
 
     // Private methods
 

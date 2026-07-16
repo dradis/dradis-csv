@@ -18,18 +18,25 @@ module Dradis::Plugins::CSV
       @headers = Array(headers)
     end
 
+    # Upserts so the saved mapping always matches the last confirmed import:
+    # existing fields are replaced, and an entity mapping is removed when no
+    # columns are assigned to that entity anymore.
     def save
       return if destination.blank?
 
       ::Mapping.transaction do
         %i[issue evidence].each do |entity|
-          fields = fields_for(entity)
-          next if fields.empty?
-
           source = Dradis::Plugins::CSV.mapping_source(headers: headers, entity: entity)
-          next if ::Mapping.exists?(component: component, source: source, destination: destination)
+          mapping = ::Mapping.find_by(component: component, source: source, destination: destination)
+          fields = fields_for(entity)
 
-          mapping = ::Mapping.create!(component: component, source: source, destination: destination)
+          if fields.empty?
+            mapping&.destroy
+            next
+          end
+
+          mapping ||= ::Mapping.create!(component: component, source: source, destination: destination)
+          mapping.mapping_fields.destroy_all
           fields.each { |attributes| mapping.mapping_fields.create!(attributes) }
         end
       end

@@ -293,7 +293,11 @@ describe 'upload feature', js: true do
     let(:file_path) { File.expand_path('../fixtures/files/simple.csv', __dir__) }
 
     before do
-      rtp = create(:report_template_properties)
+      rtp = create(
+        :report_template_properties,
+        evidence_fields: [{ name: 'Location', type: :string, default: true }],
+        issue_fields: [{ name: 'Title', type: :string, default: true }]
+      )
       @project.update(report_template_properties: rtp)
 
       headers = CSV.open(file_path, &:readline)
@@ -309,24 +313,58 @@ describe 'upload feature', js: true do
         source_field: 'Title', destination_field: 'Title', content: '{{ csv[Title] }}'
       )
 
+      evidence_mapping = Mapping.create!(
+        component: 'csv',
+        source: Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :evidence),
+        destination: rtp.as_mapping_destination
+      )
+      evidence_mapping.mapping_fields.create!(
+        source_field: 'Host', destination_field: 'node_label', content: '{{ csv[Host] }}'
+      )
+      evidence_mapping.mapping_fields.create!(
+        source_field: 'Location', destination_field: 'Location', content: '{{ csv[Location] }}'
+      )
+
       page.refresh
 
       find('#uploader + .combobox').click
       find('#uploader ~ .combobox-menu .combobox-option', text: 'Dradis::Plugins::CSV').click
 
       attach_file 'file', file_path, visible: false, disabled: false
+
+      expect(page).to have_text('CSV Upload Mapping', wait: 30)
     end
 
-    it 'applies the saved mapping without showing the column mapper' do
+    it 'pre-selects the mapper dropdowns from the saved mapping' do
+      expect(page).to have_text('A saved mapping for this CSV format was found')
+
+      expect(page).to have_select('mappings[field_attributes][0][type]', selected: 'Issue ID')
+      expect(page).to have_select('mappings[field_attributes][1][type]', selected: 'Issue Field')
+      expect(page).to have_select('mappings[field_attributes][2][type]', selected: 'Do Not Import')
+      expect(page).to have_select('mappings[field_attributes][3][type]', selected: 'Node')
+      expect(page).to have_select('mappings[field_attributes][4][type]', selected: 'Evidence Field')
+
+      expect(page).to have_select('mappings[field_attributes][1][field]', selected: 'Title')
+      expect(page).to have_select('mappings[field_attributes][4][field]', selected: 'Location')
+    end
+
+    it 'imports with the pre-selected mapping and saves any changes to it' do
+      select 'Do Not Import', from: 'mappings[field_attributes][4][type]'
+
       perform_enqueued_jobs do
-        expect(page).to have_text('A saved mapping for this CSV format was found', wait: 30)
-        expect(page).not_to have_text('CSV Upload Mapping')
+        click_button 'Import CSV'
 
         find('#console .log', wait: 30, match: :first)
         expect(page).to have_text('Worker process completed.')
 
         issue = Issue.last
         expect(issue.fields).to include('Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1')
+
+        evidence_source = Dradis::Plugins::CSV.mapping_source(
+          headers: CSV.open(file_path, &:readline), entity: :evidence
+        )
+        evidence_mapping = Mapping.find_by(component: 'csv', source: evidence_source)
+        expect(evidence_mapping.mapping_fields.pluck(:destination_field)).to eq(['node_label'])
       end
     end
   end
