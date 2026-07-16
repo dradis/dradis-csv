@@ -16,6 +16,16 @@ window.addEventListener('job-done', function () {
   }
 });
 
+document.addEventListener('turbo:load', function () {
+  var $autoImport = $('[data-behavior~=csv-auto-import]');
+
+  if ($autoImport.length) {
+    ConsoleUpdater.jobId = $autoImport.data('logUid');
+    ConsoleUpdater.parsing = true;
+    setTimeout(ConsoleUpdater.updateConsole, 1000);
+  }
+});
+
 document.addEventListener('turbo:load', function() {
   if ($('body.dradis-plugins-csv-upload.new').length) {
     $('[data-behavior=type-select]').on('change', function () {

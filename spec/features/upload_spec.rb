@@ -129,6 +129,8 @@ describe 'upload feature', js: true do
 
             evidence = node.evidence.first
             expect(evidence.fields).to eq({ 'Label' => '10.0.0.1', 'Title' => 'SQL Injection', 'Location' => '10.0.0.1', 'Port' => '443' })
+
+            expect(Mapping.where(component: 'csv')).to be_empty
           end
         end
       end
@@ -235,6 +237,11 @@ describe 'upload feature', js: true do
 
               evidence = node.evidence.first
               expect(evidence.fields).to eq({ 'Label' => '10.0.0.1', 'Location' => '10.0.0.1', 'Title' => 'SQL Injection', 'Port' => '443' })
+
+              headers = CSV.open(file_path, &:readline)
+              issue_source = Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :issue)
+              evidence_source = Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :evidence)
+              expect(Mapping.where(component: 'csv').pluck(:source)).to match_array([issue_source, evidence_source])
             end
           end
         end
@@ -278,6 +285,48 @@ describe 'upload feature', js: true do
             end
           end
         end
+      end
+    end
+  end
+
+  context 'uploading a CSV file with a saved mapping' do
+    let(:file_path) { File.expand_path('../fixtures/files/simple.csv', __dir__) }
+
+    before do
+      rtp = create(:report_template_properties)
+      @project.update(report_template_properties: rtp)
+
+      headers = CSV.open(file_path, &:readline)
+      issue_mapping = Mapping.create!(
+        component: 'csv',
+        source: Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :issue),
+        destination: rtp.as_mapping_destination
+      )
+      issue_mapping.mapping_fields.create!(
+        source_field: 'Id', destination_field: 'plugin_id', content: '{{ csv[Id] }}'
+      )
+      issue_mapping.mapping_fields.create!(
+        source_field: 'Title', destination_field: 'Title', content: '{{ csv[Title] }}'
+      )
+
+      page.refresh
+
+      find('#uploader + .combobox').click
+      find('#uploader ~ .combobox-menu .combobox-option', text: 'Dradis::Plugins::CSV').click
+
+      attach_file 'file', file_path, visible: false, disabled: false
+    end
+
+    it 'applies the saved mapping without showing the column mapper' do
+      perform_enqueued_jobs do
+        expect(page).to have_text('A saved mapping for this CSV format was found', wait: 30)
+        expect(page).not_to have_text('CSV Upload Mapping')
+
+        find('#console .log', wait: 30, match: :first)
+        expect(page).to have_text('Worker process completed.')
+
+        issue = Issue.last
+        expect(issue.fields).to include('Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1')
       end
     end
   end

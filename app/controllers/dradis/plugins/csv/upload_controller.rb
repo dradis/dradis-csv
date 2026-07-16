@@ -7,12 +7,29 @@ module Dradis::Plugins::CSV
     before_action :load_csv_headers, only: [:new]
 
     def new
-      @default_columns = ['Column Header', 'Entity', 'Dradis Field']
-
       @log_uid = Log.new.uid
+
+      if saved_mapping?
+        job_logger.write 'Saved mapping found for this CSV format. Enqueueing job to start in the background.'
+
+        UploadJob.perform_later(
+          default_user_id: current_user.id,
+          file: @attachment.fullpath.to_s,
+          plugin_name: Dradis::Plugins::CSV.to_s,
+          project_id: current_project.id,
+          state: state,
+          uid: @log_uid
+        )
+
+        render :import
+      else
+        @default_columns = ['Column Header', 'Entity', 'Dradis Field']
+      end
     end
 
     def create
+      save_mapping
+
       job_logger.write 'Enqueueing job to start in the background.'
 
       MappingImportJob.perform_later(
@@ -28,7 +45,7 @@ module Dradis::Plugins::CSV
     private
 
     def job_logger
-      @job_logger ||= Log.new(uid: params[:log_uid].to_i)
+      @job_logger ||= Log.new(uid: params.fetch(:log_uid, @log_uid).to_i)
     end
 
     def load_attachment
@@ -63,6 +80,41 @@ module Dradis::Plugins::CSV
 
     def mappings_params
       params.require(:mappings).permit(field_attributes: [:field, :type])
+    end
+
+    def rtp_destination
+      rtp = current_project.report_template_properties
+
+      rtp && rtp.as_mapping_destination
+    end
+
+    # Persist the submitted column assignments so future uploads of this CSV
+    # format can reuse them. Mappings are scoped to a report template, so
+    # projects without one keep the upload-time mapper only.
+    def save_mapping
+      return unless rtp_destination
+
+      headers = ::CSV.open(@attachment.fullpath, &:readline)
+
+      MappingBuilder.new(
+        column_mappings: mappings_params[:field_attributes].to_h,
+        destination: rtp_destination,
+        headers: headers
+      ).save
+    end
+
+    def saved_mapping?
+      return false unless rtp_destination
+
+      sources = %i[issue evidence].map do |entity|
+        Dradis::Plugins::CSV.mapping_source(headers: @headers, entity: entity)
+      end
+
+      ::Mapping.exists?(
+        component: Dradis::Plugins::CSV.component,
+        source: sources,
+        destination: rtp_destination
+      )
     end
 
     def state
