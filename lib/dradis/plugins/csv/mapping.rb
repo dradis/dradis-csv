@@ -1,5 +1,3 @@
-require 'digest'
-
 module Dradis::Plugins::CSV
   # Unlike other integrations, CSV files don't have a fixed structure, so the
   # list of sources can't be defined upfront. Instead, a new source is
