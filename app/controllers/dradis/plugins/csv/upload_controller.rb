@@ -10,7 +10,7 @@ module Dradis::Plugins::CSV
       @default_columns = ['Column Header', 'Entity', 'Dradis Field']
 
       @log_uid = Log.new.uid
-      @saved_selections = saved_mapping_selections if saved_mapping?
+      @saved_selections = MappingBuilder.selections_for(headers: @headers, destination: rtp_destination) if saved_mapping?
     end
 
     def create
@@ -72,34 +72,6 @@ module Dradis::Plugins::CSV
       rtp = current_project.report_template_properties
 
       rtp && rtp.as_mapping_destination
-    end
-
-    # Invert the stored mapping fields back into the mapper form structure:
-    # one { type:, field: } entry per column index (see MappingBuilder for
-    # the forward direction).
-    def saved_mapping_selections
-      stored_fields = %i[issue evidence].flat_map do |entity|
-        source = Dradis::Plugins::CSV.mapping_source(headers: @headers, entity: entity)
-        mapping = Dradis::Plugins::CSV.get_mapping(source: source, destination: rtp_destination)
-
-        mapping ? mapping.mapping_fields.map { |field| [entity, field] } : []
-      end
-
-      @headers.map do |header|
-        normalized = Dradis::Plugins::CSV.normalize_header(header)
-        entity, field = stored_fields.find { |_entity, f| f.source_field == normalized }
-
-        case field&.destination_field
-        when nil
-          { type: 'skip' }
-        when Mapping::IDENTIFIER_FIELD
-          { type: 'identifier' }
-        when Mapping::NODE_LABEL_FIELD
-          { type: 'node' }
-        else
-          { type: entity.to_s, field: field.destination_field }
-        end
-      end
     end
 
     # Persist the submitted column assignments so future uploads of this CSV
