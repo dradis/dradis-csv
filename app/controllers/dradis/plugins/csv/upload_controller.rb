@@ -6,11 +6,17 @@ module Dradis::Plugins::CSV
     before_action :load_rtp_fields, only: [:new]
     before_action :load_csv_headers, only: [:new]
 
+    # Reached after the standard upload flow has already run the file
+    # through Importer#import. If a saved mapping matched, that import
+    # already happened (see importer.rb) and there's nothing left to map.
     def new
-      @default_columns = ['Column Header', 'Entity', 'Dradis Field']
+      if saved_mapping?
+        return redirect_to main_app.project_issues_path(current_project),
+          notice: 'CSV imported using its saved mapping.'
+      end
 
+      @default_columns = ['Column Header', 'Entity', 'Dradis Field']
       @log_uid = Log.new.uid
-      @saved_selections = MappingBuilder.selections_for(headers: @headers, destination: rtp_destination) if saved_mapping?
     end
 
     def create

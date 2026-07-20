@@ -137,4 +137,71 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
       end
     end
   end
+
+  describe '#import' do
+    let(:headers) { CSV.open(file, &:readline) }
+
+    context 'when the project has no RTP' do
+      it 'does not import anything' do
+        expect(instance.import(file: file)).to eq(false)
+        expect(Issue.count).to eq(0)
+      end
+    end
+
+    context 'when the project has RTP but no saved mapping' do
+      before do
+        project.update(report_template_properties: create(:report_template_properties))
+      end
+
+      it 'does not import anything' do
+        expect(instance.import(file: file)).to eq(false)
+        expect(Issue.count).to eq(0)
+      end
+    end
+
+    context 'when a saved mapping exists for these headers' do
+      let(:rtp) { create(:report_template_properties) }
+
+      before do
+        project.update(report_template_properties: rtp)
+
+        issue_mapping = Mapping.create!(
+          component: 'csv',
+          source: Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :issue),
+          destination: rtp.as_mapping_destination
+        )
+        issue_mapping.mapping_fields.create!(
+          source_field: 'Id', destination_field: 'plugin_id', content: '{{ csv[Id] }}'
+        )
+        issue_mapping.mapping_fields.create!(
+          source_field: 'Title', destination_field: 'Title', content: '{{ csv[Title] }}'
+        )
+
+        evidence_mapping = Mapping.create!(
+          component: 'csv',
+          source: Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :evidence),
+          destination: rtp.as_mapping_destination
+        )
+        evidence_mapping.mapping_fields.create!(
+          source_field: 'Host', destination_field: 'node_label', content: '{{ csv[Host] }}'
+        )
+        evidence_mapping.mapping_fields.create!(
+          source_field: 'Location', destination_field: 'Location', content: '{{ csv[Location] }}'
+        )
+      end
+
+      it 'imports using the saved mapping' do
+        expect(instance.import(file: file)).to eq(true)
+
+        issue = Issue.last
+        expect(issue.fields).to include('Title' => 'SQL Injection', 'plugin_id' => '1')
+
+        node = issue.affected.first
+        expect(node.label).to eq('10.0.0.1')
+
+        evidence = node.evidence.first
+        expect(evidence.fields).to include('Location' => '10.0.0.1')
+      end
+    end
+  end
 end

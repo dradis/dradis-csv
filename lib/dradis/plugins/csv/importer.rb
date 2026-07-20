@@ -11,30 +11,59 @@ module Dradis::Plugins::CSV
       }
     end
 
-    # CSV files are imported through the column mapper in the web UI (see
-    # UploadController), which enqueues MappingImportJob with the submitted
-    # column assignments. This generic entry point (e.g. API uploads) is not
-    # supported.
+    # Runs as part of the standard upload flow, before the user would reach
+    # the column mapper. If this project already has a saved mapping for the
+    # file's headers, import immediately using it, so a recognized format
+    # never needs re-mapping and gets the same treatment (Rules Engine
+    # included) as any other plugin's upload. Unrecognized formats no-op
+    # here; UploadController sends the user to the mapper instead.
     def import(params = {})
-      logger.fatal { 'CSV uploads must be mapped through the Upload Manager in the web UI.' }
+      return false if destination.blank?
 
-      false
+      headers = CSV.open(params[:file], &:readline)
+      selections = MappingBuilder.selections_for(headers: headers, destination: destination)
+
+      if selections.all? { |selection| selection[:type] == 'skip' }
+        logger.info { 'No saved mapping found for this CSV format.' }
+        return false
+      end
+
+      mappings = selections.each_with_index.to_h do |selection, index|
+        [index.to_s, selection.transform_keys(&:to_s)]
+      end
+
+      run_import(file: params[:file], mappings: mappings)
     end
 
+    # Entry point for the column mapper form submission (see
+    # MappingImportJob), used when the CSV format has no saved mapping yet.
     def import_csv(params)
       logger.info { 'Worker process starting background task.' }
 
-      mappings_groups = params[:mappings].group_by { |index, mapping| mapping['type'] }
+      run_import(file: params[:file], mappings: params[:mappings])
+    end
 
-      filename = File.basename(params[:file])
+    private
+
+    attr_accessor :evidence_mappings, :issue_lookup, :issue_mappings, :node_index
+
+    def destination
+      rtp = project.report_template_properties if project
+
+      rtp && rtp.as_mapping_destination
+    end
+
+    def run_import(file:, mappings:)
+      mappings_groups = mappings.group_by { |index, mapping| mapping['type'] }
+
+      filename = File.basename(file)
       id_index = Integer(mappings_groups['identifier']&.first&.first, exception: false)
       @evidence_mappings = mappings_groups['evidence'] || []
       @issue_lookup = {}
       @issue_mappings = mappings_groups['issue'] || []
       @node_index = Integer(mappings_groups['node']&.first&.first, exception: false)
 
-
-      CSV.foreach(params[:file], headers: true).with_index do |row, index|
+      CSV.foreach(file, headers: true).with_index do |row, index|
         csv_id = row[id_index] || "#{filename}-#{index}"
         process_issue(csv_id: csv_id, row: row)
         process_node(csv_id: csv_id, row: row)
@@ -42,10 +71,6 @@ module Dradis::Plugins::CSV
 
       true
     end
-
-    private
-
-    attr_accessor :evidence_mappings, :issue_lookup, :issue_mappings, :node_index
 
     def build_text(mappings:, row:)
       mappings.map do |index, mapping|

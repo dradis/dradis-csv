@@ -329,43 +329,22 @@ describe 'upload feature', js: true do
 
       find('#uploader + .combobox').click
       find('#uploader ~ .combobox-menu .combobox-option', text: 'Dradis::Plugins::CSV').click
+    end
 
+    it 'imports immediately using the saved mapping, without showing the mapper' do
       attach_file 'file', file_path, visible: false, disabled: false
 
-      expect(page).to have_text('CSV Upload Mapping', wait: 30)
-    end
+      expect(page).to have_text('CSV imported using its saved mapping', wait: 30)
+      expect(current_path).to eq(main_app.project_upload_manager_path(@project))
 
-    it 'pre-selects the mapper dropdowns from the saved mapping' do
-      expect(page).to have_text('A saved mapping for this CSV format was found')
+      issue = Issue.last
+      expect(issue.fields).to include('Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1')
 
-      expect(page).to have_select('mappings[field_attributes][0][type]', selected: 'Issue ID')
-      expect(page).to have_select('mappings[field_attributes][1][type]', selected: 'Issue Field')
-      expect(page).to have_select('mappings[field_attributes][2][type]', selected: 'Do Not Import')
-      expect(page).to have_select('mappings[field_attributes][3][type]', selected: 'Node')
-      expect(page).to have_select('mappings[field_attributes][4][type]', selected: 'Evidence Field')
+      node = issue.affected.first
+      expect(node.label).to eq('10.0.0.1')
 
-      expect(page).to have_select('mappings[field_attributes][1][field]', selected: 'Title')
-      expect(page).to have_select('mappings[field_attributes][4][field]', selected: 'Location')
-    end
-
-    it 'imports with the pre-selected mapping and saves any changes to it' do
-      select 'Do Not Import', from: 'mappings[field_attributes][4][type]'
-
-      perform_enqueued_jobs do
-        click_button 'Import CSV'
-
-        find('#console .log', wait: 30, match: :first)
-        expect(page).to have_text('Worker process completed.')
-
-        issue = Issue.last
-        expect(issue.fields).to include('Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1')
-
-        evidence_source = Dradis::Plugins::CSV.mapping_source(
-          headers: CSV.open(file_path, &:readline), entity: :evidence
-        )
-        evidence_mapping = Mapping.find_by(component: 'csv', source: evidence_source)
-        expect(evidence_mapping.mapping_fields.pluck(:destination_field)).to eq(['node_label'])
-      end
+      evidence = node.evidence.first
+      expect(evidence.fields).to include('Location' => '10.0.0.1')
     end
   end
 

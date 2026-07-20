@@ -12,16 +12,6 @@
 <% end %>
 
 <div class="content-container">
-  <% if @saved_selections %>
-    <div class="alert alert-info" data-behavior="csv-prefilled">
-      <p class="mb-0">
-        A saved mapping for this CSV format was found and pre-selected below.
-        Review the assignments and click Import CSV. Importing updates the
-        saved mapping with any changes you make.
-      </p>
-    </div>
-  <% end %>
-
   <div data-behavior="validation-messages">
     <div class="alert alert-danger d-none" data-behavior="issue-id-validation-message">
       <p>An Issue ID must be selected.</p>
@@ -48,23 +38,20 @@
       </thead>
       <tbody>
         <% @headers.each_with_index do |header, index| %>
-          <% selection = @saved_selections ? @saved_selections[index] : {} %>
-          <tr class="<%= 'issue-type' if selection.fetch(:type, 'issue') == 'issue' %>">
+          <tr class="issue-type">
             <td><%= header %></td>
             <td>
               <div class="form-group m-0">
-                <%= f.select "mappings[field_attributes][#{index}][type]", [['Issue Field', 'issue'], ['Issue ID', 'identifier'], ['Evidence Field', 'evidence'], ['Node', 'node'], ['&#9472;'.html_safe, 'divider'], ['Do Not Import','skip']], { disabled: 'divider', selected: selection[:type] }, class: 'form-select w-75', data: { behavior: 'type-select', 'combobox-config': 'no-combobox' } %>
+                <%= f.select "mappings[field_attributes][#{index}][type]", [['Issue Field', 'issue'], ['Issue ID', 'identifier'], ['Evidence Field', 'evidence'], ['Node', 'node'], ['&#9472;'.html_safe, 'divider'], ['Do Not Import','skip']], { disabled: 'divider' }, class: 'form-select w-75', data: { behavior: 'type-select', 'combobox-config': 'no-combobox' } %>
               </div>
             </td>
             <td>
               <% if @rtp_fields %>
                 <div>
-                  <% selected_issue_field = selection[:type] == 'issue' ? selection[:field] : nil %>
-                  <% issue_options = @rtp_fields[:issue].any? ? options_for_select(@rtp_fields[:issue], selected_issue_field) : options_for_select([[header, header]], disabled: header, selected: header) %>
+                  <% issue_options = @rtp_fields[:issue].any? ? options_for_select(@rtp_fields[:issue]) : options_for_select([[header, header]], disabled: header, selected: header) %>
                   <%= f.select "mappings[field_attributes][#{index}][field]", issue_options, {}, class: 'form-select w-75 field-select', data: { behavior: 'dradis-field-select issue-field-select', header: header, 'combobox-config': 'no-combobox' } %>
 
-                  <% selected_evidence_field = selection[:type] == 'evidence' ? selection[:field] : nil %>
-                  <% evidence_options = @rtp_fields[:evidence].any? ? options_for_select(@rtp_fields[:evidence], selected_evidence_field) : options_for_select([[header, header]], disabled: header, selected: header) %>
+                  <% evidence_options = @rtp_fields[:evidence].any? ? options_for_select(@rtp_fields[:evidence]) : options_for_select([[header, header]], disabled: header, selected: header) %>
                   <%= f.select "mappings[field_attributes][#{index}][field]", evidence_options, {}, disabled: true, class: 'form-select w-75 field-select d-none', data: { behavior: 'dradis-field-select evidence-field-select', header: header, 'combobox-config': 'no-combobox' } %>
 
                   <%= f.select "mappings[field_attributes][#{index}][field]", [['N/A', '']], {}, disabled: true, class: 'form-select w-75 field-select d-none', data: { behavior: 'dradis-field-select empty-field-select', header: header, 'combobox-config': 'no-combobox' } %>
