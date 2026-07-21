@@ -13,7 +13,7 @@ module Dradis::Plugins::CSV
     #   '2' => { 'type' => 'identifier' },
     #   '3' => { 'type' => 'evidence', 'field' => 'Port' }
     # }
-    def perform(default_user_id:, file:, mappings:, project_id:, state:, uid:)
+    def perform(default_user_id:, file:, headers:, mappings:, project_id:, state:, uid:)
       logger = Log.new(uid: uid)
       logger.write { "Job id is #{job_id}." }
 
@@ -25,7 +25,7 @@ module Dradis::Plugins::CSV
         state: state
       )
 
-      importer.import_csv(file: file, mappings: mappings)
+      importer.import_csv(file: file, headers: headers, mappings: mappings)
 
       logger.write { 'Worker process completed.' }
     end

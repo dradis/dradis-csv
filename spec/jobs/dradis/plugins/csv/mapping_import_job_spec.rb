@@ -7,8 +7,10 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
     described_class.new.perform(
       default_user_id: create(:user).id,
       file: file,
+      headers: CSV.open(file, &:readline),
       mappings: {},
       project_id: create(:project).id,
+      state: 'draft',
       uid: 1
     )
   end

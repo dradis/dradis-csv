@@ -27,6 +27,7 @@ module Dradis::Plugins::CSV
       MappingImportJob.perform_later(
         default_user_id: current_user.id,
         file: @attachment.fullpath.to_s,
+        headers: csv_headers,
         mappings: mappings_params[:field_attributes].to_h,
         project_id: current_project.id,
         state: state,
@@ -38,6 +39,10 @@ module Dradis::Plugins::CSV
 
     def job_logger
       @job_logger ||= Log.new(uid: params[:log_uid].to_i)
+    end
+
+    def csv_headers
+      @csv_headers ||= ::CSV.open(@attachment.fullpath, &:readline)
     end
 
     def load_attachment
@@ -85,12 +90,10 @@ module Dradis::Plugins::CSV
     def save_mapping
       return unless rtp_destination
 
-      headers = ::CSV.open(@attachment.fullpath, &:readline)
-
       MappingBuilder.new(
         column_mappings: mappings_params[:field_attributes].to_h,
         destination: rtp_destination,
-        headers: headers
+        headers: csv_headers
       ).save
     end
 

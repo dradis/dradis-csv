@@ -20,6 +20,12 @@
     <div class="alert alert-danger d-none" data-behavior="node-type-validation-message">
       <p>A Node Label must be selected to import evidence records.</p>
     </div>
+
+    <% if @rtp_fields %>
+      <div class="alert alert-info">
+        <p class="m-0">This mapping will be saved and applied automatically the next time you upload a CSV file with these same column headers.</p>
+      </div>
+    <% end %>
   </div>
 
   <%= form_with url: project_upload_index_path(current_project, format: :js), method: :post, local: false, data: { behavior: 'mapping-form' } do |f| %>

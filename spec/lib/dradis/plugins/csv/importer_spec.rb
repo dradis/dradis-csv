@@ -2,6 +2,7 @@ require 'rails_helper'
 
 RSpec.describe Dradis::Plugins::CSV::Importer do
   let(:file) { File.expand_path('../../../.../../../fixtures/files/simple.csv', __dir__) }
+  let(:headers) { CSV.open(file, &:readline) }
   let(:project) { create(:project) }
 
   let(:instance) do
@@ -14,7 +15,7 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
   end
 
   let(:import_csv) do
-    instance.import_csv(file: file, mappings: mappings)
+    instance.import_csv(file: file, headers: headers, mappings: mappings)
   end
 
   describe '#import_csv' do
@@ -139,8 +140,6 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
   end
 
   describe '#import' do
-    let(:headers) { CSV.open(file, &:readline) }
-
     context 'when the project has no RTP' do
       it 'does not import anything' do
         expect(instance.import(file: file)).to eq(false)

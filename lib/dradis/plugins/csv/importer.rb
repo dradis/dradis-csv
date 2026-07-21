@@ -37,11 +37,12 @@ module Dradis::Plugins::CSV
 
     # Entry point for the column mapper form submission (see
     # MappingImportJob), used when the CSV format has no saved mapping yet.
+    # headers is passed in rather than read from the file again here: the
+    # controller already read it once to build/save the mapping.
     def import_csv(params)
       logger.info { 'Worker process starting background task.' }
 
-      headers = CSV.open(params[:file], &:readline)
-      run_import(file: params[:file], headers: headers, mappings: params[:mappings])
+      run_import(file: params[:file], headers: params[:headers], mappings: params[:mappings])
     end
 
     private
