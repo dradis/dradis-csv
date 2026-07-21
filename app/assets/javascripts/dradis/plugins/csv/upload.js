@@ -17,8 +17,7 @@ window.addEventListener('job-done', function () {
 
   if ($('body.dradis-plugins-csv-upload.new').length) {
     $('[data-behavior~=mapping-form] input[type="submit"]')
-      .attr('disabled', false)
-      .val('Import CSV');
+      .val('Done!');
   }
 });
 
