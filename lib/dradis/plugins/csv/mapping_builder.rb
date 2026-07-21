@@ -2,8 +2,9 @@ module Dradis::Plugins::CSV
   # Converts between the column mapper's form structure and persisted
   # Mapping records, one per entity (issue/evidence), so a CSV format only
   # needs to be mapped once: #save is the forward direction (form ->
-  # records), .selections_for is the reverse (records -> form) used to
-  # prefill the mapper on a later upload of the same format.
+  # records), used the first time a format is mapped. .selections_for is
+  # the reverse (records -> form), used by Importer#import to recognize and
+  # auto-import a format on later uploads.
   class MappingBuilder
     # Mapper column types that produce fields for each entity: identifier
     # columns are stored with the issue mapping, node columns with evidence.
@@ -15,9 +16,7 @@ module Dradis::Plugins::CSV
     # Inverts the stored mapping fields back into the mapper form structure:
     # one { type:, field: } entry per header, in header order.
     def self.selections_for(headers:, destination:)
-      headers = Array(headers)
-
-      stored_fields = %i[issue evidence].flat_map do |entity|
+      stored_fields = ENTITY_TYPES.keys.flat_map do |entity|
         source = Dradis::Plugins::CSV.mapping_source(headers: headers, entity: entity)
         mapping = Dradis::Plugins::CSV.get_mapping(source: source, destination: destination)
 
@@ -53,29 +52,25 @@ module Dradis::Plugins::CSV
     def initialize(column_mappings:, destination:, headers:)
       @column_mappings = column_mappings
       @destination = destination
-      @headers = Array(headers)
+      @headers = headers
     end
 
-    # Upserts so the saved mapping always matches the last confirmed import:
-    # existing fields are replaced, and an entity mapping is removed when no
-    # columns are assigned to that entity anymore.
+    # Persists one Mapping per entity that has assigned columns, so a
+    # newly-mapped CSV format is recognized automatically on future uploads
+    # (see Importer#import). Only ever called for formats with no existing
+    # mapping: Importer#import and UploadController#new short-circuit before
+    # the mapper is reached once a format already has a saved mapping.
     def save
       return if destination.blank?
 
       ::Mapping.transaction do
-        %i[issue evidence].each do |entity|
-          source = Dradis::Plugins::CSV.mapping_source(headers: headers, entity: entity)
-          mapping = ::Mapping.find_by(component: component, source: source, destination: destination)
+        ENTITY_TYPES.keys.each do |entity|
           fields = fields_for(entity)
+          next if fields.empty?
 
-          if fields.empty?
-            mapping&.destroy
-            next
-          end
-
-          mapping ||= ::Mapping.create!(component: component, source: source, destination: destination)
-          mapping.mapping_fields.destroy_all
-          fields.each { |attributes| mapping.mapping_fields.create!(attributes) }
+          source = Dradis::Plugins::CSV.mapping_source(headers: headers, entity: entity)
+          mapping = ::Mapping.create!(component: component, source: source, destination: destination)
+          mapping.mapping_fields.create!(fields)
         end
       end
     end
@@ -97,8 +92,10 @@ module Dradis::Plugins::CSV
 
         destination_field =
           case assignment['type']
-          when 'identifier' then Mapping::IDENTIFIER_FIELD
-          when 'node'       then Mapping::NODE_LABEL_FIELD
+          when 'identifier'
+            Mapping::IDENTIFIER_FIELD
+          when 'node'
+            Mapping::NODE_LABEL_FIELD
           else
             next if assignment['field'].blank?
 

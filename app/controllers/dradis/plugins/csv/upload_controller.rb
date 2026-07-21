@@ -76,7 +76,6 @@ module Dradis::Plugins::CSV
 
     def rtp_destination
       rtp = current_project.report_template_properties
-
       rtp && rtp.as_mapping_destination
     end
 

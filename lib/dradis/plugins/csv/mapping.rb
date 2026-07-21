@@ -26,13 +26,16 @@ module Dradis::Plugins::CSV
     ::Mapping.where(component: component).distinct.pluck(:source).map(&:to_sym)
   end
 
-  # The source name for a CSV format: a digest of its normalized headers plus
-  # the entity (issue/evidence) the mapping populates. Headers are sorted so
-  # reordering columns doesn't produce a new source.
+  # The source name for a CSV format: its normalized headers joined with '/',
+  # plus the entity (issue/evidence) the mapping populates, so the Mappings
+  # Manager shows something recognizable (e.g. csv_title/severity_issue)
+  # instead of an opaque digest. Headers are sorted so reordering columns
+  # doesn't produce a new source; any '/' inside a header name is replaced so
+  # it can't be mistaken for the join separator.
   def self.mapping_source(headers:, entity:)
-    normalized = Array(headers).map { |header| normalize_header(header) }.sort
+    normalized = headers.map { |header| normalize_header(header).gsub('/', '-') }.sort
 
-    "csv_#{Digest::MD5.hexdigest(normalized.join(','))[0, 8]}_#{entity}"
+    "csv_#{normalized.join('/')}_#{entity}"
   end
 
   def self.normalize_header(header)
