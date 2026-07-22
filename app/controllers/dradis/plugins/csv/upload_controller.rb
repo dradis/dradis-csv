@@ -3,7 +3,7 @@ module Dradis::Plugins::CSV
     include ProjectScoped
 
     before_action :load_attachment, only: [:new, :create]
-    before_action :load_rtp_fields, only: [:new]
+    before_action :load_rtp_fields, only: [:new, :create]
     before_action :load_csv_headers, only: [:new]
 
     # Reached after the standard upload flow has already run the file
@@ -93,7 +93,8 @@ module Dradis::Plugins::CSV
       MappingBuilder.new(
         column_mappings: mappings_params[:field_attributes].to_h,
         destination: rtp_destination,
-        headers: csv_headers
+        headers: csv_headers,
+        rtp_fields: @rtp_fields
       ).save
     end
 

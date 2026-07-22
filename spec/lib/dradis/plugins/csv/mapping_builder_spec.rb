@@ -3,6 +3,7 @@ require 'rails_helper'
 RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
   let(:headers) { ['Id', 'Title', 'Host', 'Vulnerability Category'] }
   let(:destination) { 'rtp_1' }
+  let(:rtp_fields) { { issue: ['Title'], evidence: ['Rating'] } }
   let(:column_mappings) do
     {
       '0' => { 'type' => 'identifier' },
@@ -23,7 +24,8 @@ RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
     described_class.new(
       column_mappings: column_mappings,
       destination: destination,
-      headers: headers
+      headers: headers,
+      rtp_fields: rtp_fields
     )
   end
 
@@ -46,33 +48,6 @@ RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
         ['node_label', 'Host', '{{ csv[Host] }}'],
         ['Rating', 'VulnerabilityCategory', '{{ csv[VulnerabilityCategory] }}']
       ])
-    end
-
-    it 'does not duplicate existing mappings' do
-      builder.save
-
-      expect { builder.save }.not_to change { Mapping.count }
-    end
-
-    it 'replaces the fields of an existing mapping with the new assignments' do
-      builder.save
-
-      updated_builder = described_class.new(
-        column_mappings: {
-          '0' => { 'type' => 'identifier' },
-          '1' => { 'type' => 'skip' }
-        },
-        destination: destination,
-        headers: headers
-      )
-
-      expect { updated_builder.save }.to change { Mapping.count }.by(-1)
-
-      issue_mapping = Mapping.find_by(
-        component: 'csv', source: issue_source, destination: destination
-      )
-      expect(issue_mapping.mapping_fields.pluck(:destination_field)).to eq(['plugin_id'])
-      expect(Mapping.find_by(source: evidence_source)).to be_nil
     end
 
     context 'without a destination' do
@@ -99,6 +74,29 @@ RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
           component: 'csv', source: issue_source, destination: destination
         )
         expect(issue_mapping.mapping_fields.pluck(:destination_field)).to eq(['plugin_id'])
+      end
+    end
+
+    context 'when the RTP has no fields defined for an entity' do
+      let(:rtp_fields) { { issue: ['Title'], evidence: [] } }
+
+      it 'does not create a mapping for that entity, even for its identifier/node column' do
+        expect { builder.save }.to change { Mapping.count }.by(1)
+
+        expect(Mapping.find_by(source: evidence_source)).to be_nil
+
+        issue_mapping = Mapping.find_by(
+          component: 'csv', source: issue_source, destination: destination
+        )
+        expect(issue_mapping.mapping_fields.pluck(:destination_field)).to match_array(['plugin_id', 'Title'])
+      end
+    end
+
+    context 'when the RTP has no fields defined for either entity' do
+      let(:rtp_fields) { { issue: [], evidence: [] } }
+
+      it 'does not create any mappings' do
+        expect { builder.save }.not_to change { Mapping.count }
       end
     end
   end

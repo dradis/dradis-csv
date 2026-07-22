@@ -40,7 +40,7 @@ module Dradis::Plugins::CSV
       end
     end
 
-    attr_reader :column_mappings, :destination, :headers
+    attr_reader :column_mappings, :destination, :headers, :rtp_fields
 
     # column_mappings is the mapper form submission, keyed by column index:
     #   {
@@ -49,10 +49,14 @@ module Dradis::Plugins::CSV
     #     '2' => { 'type' => 'identifier' },
     #     '3' => { 'type' => 'evidence', 'field' => 'Port' }
     #   }
-    def initialize(column_mappings:, destination:, headers:)
+    # rtp_fields is { issue: [...field names...], evidence: [...] }: the
+    # destination fields actually defined on the RTP, used to gate #save (see
+    # below).
+    def initialize(column_mappings:, destination:, headers:, rtp_fields:)
       @column_mappings = column_mappings
       @destination = destination
       @headers = headers
+      @rtp_fields = rtp_fields
     end
 
     # Persists one Mapping per entity that has assigned columns, so a
@@ -60,11 +64,17 @@ module Dradis::Plugins::CSV
     # (see Importer#import). Only ever called for formats with no existing
     # mapping: Importer#import and UploadController#new short-circuit before
     # the mapper is reached once a format already has a saved mapping.
+    #
+    # An entity with no RTP fields defined has nowhere valid to point a
+    # mapping, so it's skipped entirely (including its identifier/node
+    # column, if any) rather than saving a mapping with a bogus destination.
     def save
       return if destination.blank?
 
       ::Mapping.transaction do
         ENTITY_TYPES.keys.each do |entity|
+          next if rtp_fields[entity].blank?
+
           fields = fields_for(entity)
           next if fields.empty?
 

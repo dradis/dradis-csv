@@ -35,7 +35,7 @@ module Dradis::Plugins::CSV
   def self.mapping_source(headers:, entity:)
     normalized = headers.map { |header| normalize_header(header).gsub('/', '-') }.sort
 
-    "csv_#{normalized.join('/')}_#{entity}"
+    "#{entity}_#{normalized.join('/')}}"
   end
 
   def self.normalize_header(header)

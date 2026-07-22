@@ -21,7 +21,7 @@
       <p>A Node Label must be selected to import evidence records.</p>
     </div>
 
-    <% if @rtp_fields %>
+    <% if @rtp_fields && (@rtp_fields[:issue].present? || @rtp_fields[:evidence].present?) %>
       <div class="alert alert-info">
         <p class="m-0">This mapping will be saved and applied automatically the next time you upload a CSV file with these same column headers.</p>
       </div>
