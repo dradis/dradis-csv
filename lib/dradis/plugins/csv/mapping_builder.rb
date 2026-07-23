@@ -107,9 +107,10 @@ module Dradis::Plugins::CSV
           when 'node'
             Mapping::NODE_LABEL_FIELD
           else
-            next if assignment['field'].blank?
+            field = assignment['field'] == 'Custom Field' ? assignment['custom_field'] : assignment['field']
+            next if field.blank?
 
-            assignment['field']
+            field
           end
 
         {

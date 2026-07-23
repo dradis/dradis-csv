@@ -26,16 +26,17 @@ module Dradis::Plugins::CSV
     ::Mapping.where(component: component).distinct.pluck(:source).map(&:to_sym)
   end
 
-  # The source name for a CSV format: its normalized headers joined with '/',
-  # plus the entity (issue/evidence) the mapping populates, so the Mappings
-  # Manager shows something recognizable (e.g. csv_title/severity_issue)
-  # instead of an opaque digest. Headers are sorted so reordering columns
-  # doesn't produce a new source; any '/' inside a header name is replaced so
-  # it can't be mistaken for the join separator.
+  # The source name for a CSV format: the entity (issue/evidence) the mapping
+  # populates, plus its normalized headers joined with '/', so the Mappings
+  # Manager shows something recognizable (e.g. issue_severity/title) instead
+  # of an opaque digest. Headers are sorted so reordering columns doesn't
+  # produce a new source; any '/' inside a header name is replaced so it
+  # can't be mistaken for the join separator. The entity prefix also lets
+  # Importer.templates group sources by entity with a simple regex.
   def self.mapping_source(headers:, entity:)
     normalized = headers.map { |header| normalize_header(header).gsub('/', '-') }.sort
 
-    "#{entity}_#{normalized.join('/')}}"
+    "#{entity}_#{normalized.join('/')}"
   end
 
   def self.normalize_header(header)

@@ -203,4 +203,21 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
       end
     end
   end
+
+  describe '.templates' do
+    let(:rtp) { create(:report_template_properties) }
+    let(:issue_source) { Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :issue) }
+    let(:evidence_source) { Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :evidence) }
+
+    before do
+      Mapping.create!(component: 'csv', source: issue_source, destination: rtp.as_mapping_destination)
+      Mapping.create!(component: 'csv', source: evidence_source, destination: rtp.as_mapping_destination)
+    end
+
+    it 'groups the currently known sources by entity' do
+      expect(described_class.templates).to eq(
+        issue: [issue_source], evidence: [evidence_source]
+      )
+    end
+  end
 end

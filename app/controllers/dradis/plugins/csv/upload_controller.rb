@@ -76,7 +76,7 @@ module Dradis::Plugins::CSV
     end
 
     def mappings_params
-      params.require(:mappings).permit(field_attributes: [:field, :type])
+      params.require(:mappings).permit(field_attributes: [:field, :type, :custom_field])
     end
 
     def rtp_destination

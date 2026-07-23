@@ -6,8 +6,8 @@ module Dradis::Plugins::CSV
       sources = Dradis::Plugins::CSV.mapping_sources.map(&:to_s)
 
       {
-        evidence: sources.grep(/_evidence\z/),
-        issue: sources.grep(/_issue\z/)
+        evidence: sources.grep(/\Aevidence_/),
+        issue: sources.grep(/\Aissue_/)
       }
     end
 

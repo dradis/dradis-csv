@@ -65,6 +65,16 @@ document.addEventListener('turbo:load', function() {
       _setDradisFieldSelect($(this));
     });
 
+    $('[data-behavior~=dradis-field-select]').on('change', function () {
+      console.log('change!');
+      _toggleCustomFieldInput($(this));
+    });
+
+    $('[data-behavior~=dradis-field-select]').not(':disabled').each(function () {
+      console.log('initializing!');
+      _toggleCustomFieldInput($(this));
+    });
+
     $('[data-behavior~=mapping-form]').submit(function () {
       var valid = _validateIdentifierSelected() && _validateNodeSelected();
 
@@ -92,13 +102,21 @@ document.addEventListener('turbo:load', function() {
         .attr('disabled', 'disabled')
         .addClass('d-none');
 
+      $row
+        .find('[data-behavior~=custom-destination-input]')
+        .prop('disabled', true)
+        .addClass('d-none')
+        .attr('required', false);
+
+      var $activeSelect;
+
       if ($select.val() == 'issue') {
-        $row
+        $activeSelect = $row
           .find('[data-behavior~=issue-field-select]')
           .removeAttr('disabled')
           .removeClass('d-none');
       } else if ($select.val() == 'evidence') {
-        $row
+        $activeSelect = $row
           .find('[data-behavior~=evidence-field-select]')
           .removeAttr('disabled')
           .removeClass('d-none');
@@ -108,6 +126,27 @@ document.addEventListener('turbo:load', function() {
           .attr('disabled', 'disabled')
           .removeClass('d-none');
       }
+
+      if ($activeSelect) {
+        _toggleCustomFieldInput($activeSelect);
+      }
+    }
+
+    function _toggleCustomFieldInput($select) {
+      var $customInput = $select.next('[data-behavior~=custom-destination-input]');
+
+      if (!$customInput.length) {
+        return;
+      }
+
+      var isCustom = $select
+        .find('option:selected')
+        .is('[data-behavior~=custom-destination-field]');
+
+      $customInput
+        .toggleClass('d-none', !isCustom)
+        .prop('disabled', !isCustom)
+        .attr('required', isCustom);
     }
 
     function _validateNodeSelected() {

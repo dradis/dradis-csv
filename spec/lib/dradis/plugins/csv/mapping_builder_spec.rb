@@ -99,5 +99,44 @@ RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
         expect { builder.save }.not_to change { Mapping.count }
       end
     end
+
+    context 'when a column is assigned to a custom field' do
+      let(:column_mappings) do
+        {
+          '0' => { 'type' => 'identifier' },
+          '1' => { 'type' => 'issue', 'field' => 'Custom Field', 'custom_field' => 'CVSS Score' },
+          '2' => { 'type' => 'node', 'field' => '' },
+          '3' => { 'type' => 'evidence', 'field' => 'Rating' }
+        }
+      end
+
+      it 'stores the typed-in name as the destination field' do
+        builder.save
+
+        issue_mapping = Mapping.find_by(
+          component: 'csv', source: issue_source, destination: destination
+        )
+        expect(issue_mapping.mapping_fields.pluck(:destination_field)).to match_array(['plugin_id', 'CVSS Score'])
+      end
+
+      context 'when no custom field name is provided' do
+        let(:column_mappings) do
+          {
+            '0' => { 'type' => 'identifier' },
+            '1' => { 'type' => 'issue', 'field' => 'Custom Field', 'custom_field' => '' },
+            '3' => { 'type' => 'skip' }
+          }
+        end
+
+        it 'does not store a field for that column' do
+          builder.save
+
+          issue_mapping = Mapping.find_by(
+            component: 'csv', source: issue_source, destination: destination
+          )
+          expect(issue_mapping.mapping_fields.pluck(:destination_field)).to eq(['plugin_id'])
+        end
+      end
+    end
   end
 end
