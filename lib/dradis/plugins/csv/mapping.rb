@@ -65,12 +65,14 @@ module Dradis::Plugins::CSV
   # against sample data, unlike other integrations. Showing which header
   # feeds which field is the whole story.
   def self.preview_mapping_fields(mapping_fields)
-    mapping_fields.map do |field|
-      # Extract the source field
-      header = field.content[/\{\{\s?csv\[(\S*?)\]\s?\}\}/, 1] || field.content
+    mapping_fields.
+      reject { |field| [Mapping::IDENTIFIER_FIELD, Mapping::NODE_LABEL_FIELD].include?(field.destination_field) }.
+      map do |field|
+        # Extract the source field
+        header = field.content[/\{\{\s?csv\[(\S*?)\]\s?\}\}/, 1] || field.content
 
-      "#[#{field.destination_field}]#\n#{header}"
-    end.join("\n\n")
+        "#[#{field.destination_field}]#\n#{header}"
+      end.join("\n\n")
   end
 
   def self.source_fields(source)
