@@ -25,7 +25,8 @@ module Dradis::Plugins::CSV
         state: state
       )
 
-      importer.import_csv(file: file, headers: headers, mappings: mappings)
+      logger.write { 'Worker process starting background task.' }
+      importer.import_rows(file: file, headers: headers, mappings: mappings)
 
       logger.write { 'Worker process completed.' }
     end

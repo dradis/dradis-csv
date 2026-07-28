@@ -14,11 +14,11 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
     )
   end
 
-  let(:import_csv) do
-    instance.import_csv(file: file, headers: headers, mappings: mappings)
+  let(:import_rows) do
+    instance.import_rows(file: file, headers: headers, mappings: mappings)
   end
 
-  describe '#import_csv' do
+  describe '#import_rows' do
     context 'when project has RTP' do
       let(:mappings) do
         {
@@ -35,7 +35,7 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
       end
 
       it 'uses the field as Dradis Field' do
-        import_csv
+        import_rows
 
         issue = Issue.first
         expect(issue.fields).to eq({ 'MyTitle' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1' })
@@ -61,7 +61,7 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
       end
 
       it 'uses the column name as Dradis Field' do
-        import_csv
+        import_rows
 
         issue = Issue.first
         expect(issue.fields).to eq({ 'Title' => 'SQL Injection', 'VulnerabilityCategory' => 'High', 'plugin' => 'csv', 'plugin_id' => '1' })
@@ -74,7 +74,7 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
       end
 
       it 'strips out whitespace from column header' do
-        import_csv
+        import_rows
 
         issue = Issue.first
         expect(issue.fields.keys).to include('VulnerabilityCategory')
@@ -91,7 +91,7 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
       end
 
       it 'does not create node and evidence' do
-        import_csv
+        import_rows
 
         issue = Issue.last
         expect(issue.affected.length).to eq(0)
@@ -108,7 +108,7 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
       end
 
       it 'uses filename and row index as csv_id' do
-        import_csv
+        import_rows
 
         issue = Issue.last
         expect(issue.fields).to eq({ 'Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => 'simple.csv-0' })
@@ -125,7 +125,7 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
       end
 
       it 'still creates evidence record' do
-        import_csv
+        import_rows
 
         issue = Issue.first
         expect(issue.fields).to eq({ 'Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1' })

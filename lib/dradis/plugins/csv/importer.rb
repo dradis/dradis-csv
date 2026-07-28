@@ -32,35 +32,14 @@ module Dradis::Plugins::CSV
         [index.to_s, selection.transform_keys(&:to_s)]
       end
 
-      run_import(file: params[:file], headers: headers, mappings: mappings)
+      import_rows(file: params[:file], headers: headers, mappings: mappings)
     end
 
     # Entry point for the column mapper form submission (see
     # MappingImportJob), used when the CSV format has no saved mapping yet.
-    # headers is passed in rather than read from the file again here: the
-    # controller already read it once to build/save the mapping.
-    def import_csv(params)
-      logger.info { 'Worker process starting background task.' }
-
-      run_import(file: params[:file], headers: params[:headers], mappings: params[:mappings])
-    end
-
-    private
-
-    attr_accessor :evidence_fields, :evidence_mappings, :evidence_source,
-      :issue_fields, :issue_lookup, :issue_mappings, :issue_source, :node_index
-
-    # Overrides Upload::Importer's default_mapping_service to build CSV's own
-    # MappingService, which memoizes source_fields per instance (see
-    # MappingService#source_fields) since it's a database-backed lookup here.
-    def default_mapping_service
-      rtp = project.report_template_properties if project
-      destination = rtp ? rtp.as_mapping_destination : nil
-
-      MappingService.new(destination: destination, integration: plugin)
-    end
-
-    def run_import(file:, headers:, mappings:)
+    # headers/mappings come straight from the form the user just submitted,
+    # rather than being read/derived again here.
+    def import_rows(file:, headers:, mappings:)
       mappings_groups = mappings.group_by { |index, mapping| mapping['type'] }
 
       filename = File.basename(file)
@@ -82,9 +61,24 @@ module Dradis::Plugins::CSV
       true
     end
 
+    private
+
+    attr_accessor :evidence_fields, :evidence_mappings, :evidence_source,
+      :issue_fields, :issue_lookup, :issue_mappings, :issue_source, :node_index
+
+    # Overrides Upload::Importer's default_mapping_service to build CSV's own
+    # MappingService, which memoizes source_fields per instance (see
+    # MappingService#source_fields) since it's a database-backed lookup here.
+    def default_mapping_service
+      rtp = project.report_template_properties if project
+      destination = rtp ? rtp.as_mapping_destination : nil
+
+      MappingService.new(destination: destination, integration: plugin)
+    end
+
     # The saved Mapping's fields (with their content templates) for this
     # entity, excluding the reserved identifier/node fields (those drive
-    # csv_id/node_label directly in run_import, not entity content). Returns
+    # csv_id/node_label directly in import_rows, not entity content). Returns
     # nil when there's no RTP or no saved mapping, so build_text falls back
     # to reading the CSV directly instead of applying a template.
     def mapped_fields(entity:, headers:)

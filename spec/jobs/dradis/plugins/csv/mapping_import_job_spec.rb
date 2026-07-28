@@ -16,10 +16,10 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
   end
 
   describe '#perform' do
-    it 'calls Importer#import_csv' do
+    it 'calls Importer#import_rows' do
       dbl = double('Importer')
       allow(Dradis::Plugins::CSV::Importer).to receive(:new).and_return(dbl)
-      expect(dbl).to receive(:import_csv).and_return(true)
+      expect(dbl).to receive(:import_rows).and_return(true)
 
       perform_job
     end
