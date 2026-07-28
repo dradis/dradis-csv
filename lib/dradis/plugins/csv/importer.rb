@@ -50,6 +50,16 @@ module Dradis::Plugins::CSV
     attr_accessor :evidence_fields, :evidence_mappings, :evidence_source,
       :issue_fields, :issue_lookup, :issue_mappings, :issue_source, :node_index
 
+    # Overrides Upload::Importer's default_mapping_service to build CSV's own
+    # MappingService, which memoizes source_fields per instance (see
+    # MappingService#source_fields) since it's a database-backed lookup here.
+    def default_mapping_service
+      rtp = project.report_template_properties if project
+      destination = rtp ? rtp.as_mapping_destination : nil
+
+      MappingService.new(destination: destination, integration: plugin)
+    end
+
     def run_import(file:, headers:, mappings:)
       mappings_groups = mappings.group_by { |index, mapping| mapping['type'] }
 

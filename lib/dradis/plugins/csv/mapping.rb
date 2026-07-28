@@ -22,6 +22,22 @@ module Dradis::Plugins::CSV
     {}
   end
 
+  # Signals that sources are created on upload and can't be defined upfront
+  # (e.g. so the Mappings Manager doesn't offer manual mapping creation).
+  def self.dynamic_mapping_sources?
+    true
+  end
+
+  # Excludes the reserved identifier/node fields from the destination field
+  # list: they carry row metadata, not entity content (see Importer#mapped_fields,
+  # which excludes them the same way when building the import template).
+  def self.field_names(source:, destination: nil, field_type: 'destination')
+    super.reject do |field|
+      field_type == 'destination' &&
+        [Mapping::IDENTIFIER_FIELD, Mapping::NODE_LABEL_FIELD].include?(field)
+    end
+  end
+
   def self.mapping_sources
     ::Mapping.where(component: component).distinct.pluck(:source).map(&:to_sym)
   end
@@ -41,6 +57,20 @@ module Dradis::Plugins::CSV
 
   def self.normalize_header(header)
     header.to_s.delete(" \t\r\n")
+  end
+
+  # CSV's mapping fields are never more than a direct column reference (see
+  # MappingBuilder#fields_for and manage_fields.js#updateContent: content is
+  # always "{{ csv[header] }}"), so there's no computed content to preview
+  # against sample data, unlike other integrations. Showing which header
+  # feeds which field is the whole story.
+  def self.preview_mapping_fields(mapping_fields)
+    mapping_fields.map do |field|
+      # Extract the source field
+      header = field.content[/\{\{\s?csv\[(\S*?)\]\s?\}\}/, 1] || field.content
+
+      "#[#{field.destination_field}]#\n#{header}"
+    end.join("\n\n")
   end
 
   def self.source_fields(source)
