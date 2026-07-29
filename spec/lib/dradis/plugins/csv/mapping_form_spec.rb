@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
+RSpec.describe Dradis::Plugins::CSV::MappingForm do
   let(:headers) { ['Id', 'Title', 'Host', 'Vulnerability Category'] }
   let(:destination) { 'rtp_1' }
   let(:rtp_fields) { { issue: ['Title'], evidence: ['Rating'] } }
@@ -20,18 +20,15 @@ RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
     Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :evidence)
   end
 
-  subject(:builder) do
-    described_class.new(
-      column_mappings: column_mappings,
-      destination: destination,
-      headers: headers,
-      rtp_fields: rtp_fields
-    )
+  subject(:form) do
+    described_class.new(destination: destination, headers: headers, rtp_fields: rtp_fields)
   end
+
+  let(:save) { form.save(column_mappings: column_mappings) }
 
   describe '#save' do
     it 'creates one mapping per entity with normalized source fields' do
-      expect { builder.save }.to change { Mapping.count }.by(2)
+      expect { save }.to change { Mapping.count }.by(2)
 
       issue_mapping = Mapping.find_by(
         component: 'csv', source: issue_source, destination: destination
@@ -54,7 +51,7 @@ RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
       let(:destination) { nil }
 
       it 'does not create any mappings' do
-        expect { builder.save }.not_to change { Mapping.count }
+        expect { save }.not_to change { Mapping.count }
       end
     end
 
@@ -68,7 +65,7 @@ RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
       end
 
       it 'only stores the fields with a destination' do
-        expect { builder.save }.to change { Mapping.count }.by(1)
+        expect { save }.to change { Mapping.count }.by(1)
 
         issue_mapping = Mapping.find_by(
           component: 'csv', source: issue_source, destination: destination
@@ -81,7 +78,7 @@ RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
       let(:rtp_fields) { { issue: ['Title'], evidence: [] } }
 
       it 'does not create a mapping for that entity, even for its identifier/node column' do
-        expect { builder.save }.to change { Mapping.count }.by(1)
+        expect { save }.to change { Mapping.count }.by(1)
 
         expect(Mapping.find_by(source: evidence_source)).to be_nil
 
@@ -96,7 +93,7 @@ RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
       let(:rtp_fields) { { issue: [], evidence: [] } }
 
       it 'does not create any mappings' do
-        expect { builder.save }.not_to change { Mapping.count }
+        expect { save }.not_to change { Mapping.count }
       end
     end
 
@@ -111,7 +108,7 @@ RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
       end
 
       it 'stores the typed-in name as the destination field' do
-        builder.save
+        save
 
         issue_mapping = Mapping.find_by(
           component: 'csv', source: issue_source, destination: destination
@@ -129,7 +126,7 @@ RSpec.describe Dradis::Plugins::CSV::MappingBuilder do
         end
 
         it 'does not store a field for that column' do
-          builder.save
+          save
 
           issue_mapping = Mapping.find_by(
             component: 'csv', source: issue_source, destination: destination

@@ -7,6 +7,12 @@ module Dradis::Plugins::CSV
   # Importer#default_mapping_service), so the cache can't outlive the data
   # it was read from.
   class MappingService < Dradis::Plugins::MappingService
+    def sample
+      @sample ||= {}
+      @sample[source] ||=
+        source_fields.index_with { |field| "Sample #{field}" }.to_json if valid_source?
+    end
+
     private
 
     def source_fields

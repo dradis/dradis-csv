@@ -90,26 +90,15 @@ module Dradis::Plugins::CSV
     def save_mapping
       return unless rtp_destination
 
-      MappingBuilder.new(
-        column_mappings: mappings_params[:field_attributes].to_h,
+      MappingForm.new(
         destination: rtp_destination,
         headers: csv_headers,
         rtp_fields: @rtp_fields
-      ).save
+      ).save(column_mappings: mappings_params[:field_attributes].to_h)
     end
 
     def saved_mapping?
-      return false unless rtp_destination
-
-      sources = %i[issue evidence].map do |entity|
-        Dradis::Plugins::CSV.mapping_source(headers: @headers, entity: entity)
-      end
-
-      ::Mapping.exists?(
-        component: Dradis::Plugins::CSV.component,
-        source: sources,
-        destination: rtp_destination
-      )
+      rtp_destination && Dradis::Plugins::CSV.mapping_exists?(headers: @headers, destination: rtp_destination)
     end
 
     def state

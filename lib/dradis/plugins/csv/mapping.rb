@@ -2,7 +2,7 @@ module Dradis::Plugins::CSV
   # Unlike other integrations, CSV files don't have a fixed structure, so the
   # list of sources can't be defined upfront. Instead, a new source is
   # registered every time a user maps a new CSV format (i.e. a new set of
-  # column headers) through the column mapper (see MappingBuilder).
+  # column headers) through the column mapper (see MappingForm).
   #
   # The empty constants keep the interface expected by
   # Dradis::Plugins::Mappings::Base, while the class methods below override
@@ -38,6 +38,16 @@ module Dradis::Plugins::CSV
     end
   end
 
+  # Whether a format matching these headers has already been mapped for this
+  # destination, i.e. whether either its issue or evidence Mapping (or both)
+  # was saved. Shared by Importer#import (to recognize a format on upload)
+  # and UploadController (to skip the mapper for a recognized format).
+  def self.mapping_exists?(headers:, destination:)
+    sources = %i[issue evidence].map { |entity| mapping_source(headers: headers, entity: entity) }
+
+    ::Mapping.exists?(component: component, source: sources, destination: destination)
+  end
+
   def self.mapping_sources
     ::Mapping.where(component: component).distinct.pluck(:source).map(&:to_sym)
   end
@@ -57,22 +67,6 @@ module Dradis::Plugins::CSV
 
   def self.normalize_header(header)
     header.to_s.delete(" \t\r\n")
-  end
-
-  # CSV's mapping fields are never more than a direct column reference (see
-  # MappingBuilder#fields_for and manage_fields.js#updateContent: content is
-  # always "{{ csv[header] }}"), so there's no computed content to preview
-  # against sample data, unlike other integrations. Showing which header
-  # feeds which field is the whole story.
-  def self.preview_mapping_fields(mapping_fields)
-    mapping_fields.
-      reject { |field| [Mapping::IDENTIFIER_FIELD, Mapping::NODE_LABEL_FIELD].include?(field.destination_field) }.
-      map do |field|
-        # Extract the source field
-        header = field.content[/\{\{\s?csv\[(\S*?)\]\s?\}\}/, 1] || field.content
-
-        "#[#{field.destination_field}]#\n#{header}"
-      end.join("\n\n")
   end
 
   def self.source_fields(source)

@@ -21,36 +21,32 @@ module Dradis::Plugins::CSV
       return false if mapping_service.destination.blank?
 
       headers = CSV.open(params[:file], &:readline)
-      selections = MappingBuilder.selections_for(headers: headers, destination: mapping_service.destination)
 
-      if selections.all? { |selection| selection[:type] == 'skip' }
+      unless Dradis::Plugins::CSV.mapping_exists?(headers: headers, destination: mapping_service.destination)
         logger.info { 'No saved mapping found for this CSV format.' }
         return false
       end
 
-      mappings = selections.each_with_index.to_h do |selection, index|
-        [index.to_s, selection.transform_keys(&:to_s)]
-      end
-
-      import_rows(file: params[:file], headers: headers, mappings: mappings)
+      import_rows(file: params[:file], headers: headers)
     end
 
-    # Entry point for the column mapper form submission (see
-    # MappingImportJob), used when the CSV format has no saved mapping yet.
-    # headers/mappings come straight from the form the user just submitted,
-    # rather than being read/derived again here.
-    def import_rows(file:, headers:, mappings:)
-      mappings_groups = mappings.group_by { |index, mapping| mapping['type'] }
-
+    # Entry point for both the column mapper form submission (see
+    # MappingImportJob) and the auto-recognized import above. mappings is the
+    # raw form submission and is only consulted as a fallback, for whichever
+    # of identifier/node/entity fields has no saved Mapping to read from
+    # instead (e.g. no RTP is set, so MappingForm never persisted one).
+    def import_rows(file:, headers:, mappings: nil)
       filename = File.basename(file)
-      id_index = Integer(mappings_groups['identifier']&.first&.first, exception: false)
-      @evidence_mappings = mappings_groups['evidence'] || []
       @issue_lookup = {}
-      @issue_mappings = mappings_groups['issue'] || []
-      @node_index = Integer(mappings_groups['node']&.first&.first, exception: false)
 
-      @issue_source, @issue_fields = mapped_fields(entity: :issue, headers: headers)
-      @evidence_source, @evidence_fields = mapped_fields(entity: :evidence, headers: headers)
+      @issue_source, @issue_fields, id_index = mapped_fields(entity: :issue, headers: headers)
+      @evidence_source, @evidence_fields, node_index = mapped_fields(entity: :evidence, headers: headers)
+
+      mappings_groups = (mappings || {}).group_by { |index, mapping| mapping['type'] }
+      id_index ||= Integer(mappings_groups['identifier']&.first&.first, exception: false)
+      @node_index = node_index || Integer(mappings_groups['node']&.first&.first, exception: false)
+      @evidence_mappings = mappings_groups['evidence'] || []
+      @issue_mappings = mappings_groups['issue'] || []
 
       CSV.foreach(file, headers: true).with_index do |row, index|
         csv_id = row[id_index] || "#{filename}-#{index}"
@@ -77,23 +73,30 @@ module Dradis::Plugins::CSV
     end
 
     # The saved Mapping's fields (with their content templates) for this
-    # entity, excluding the reserved identifier/node fields (those drive
-    # csv_id/node_label directly in import_rows, not entity content). Returns
-    # nil when there's no RTP or no saved mapping, so build_text falls back
-    # to reading the CSV directly instead of applying a template.
+    # entity, excluding the reserved identifier/node field (that drives
+    # csv_id/node_label directly in import_rows, not entity content) but
+    # returning its column index instead, so import_rows can read it
+    # straight off the Mapping rather than the column mapper form. Returns
+    # all nils when there's no RTP or no saved mapping, so build_text falls
+    # back to reading the CSV directly instead of applying a template, and
+    # import_rows falls back to the form for the reserved index too.
     def mapped_fields(entity:, headers:)
-      return unless mapping_service.destination.present?
+      return [nil, nil, nil] unless mapping_service.destination.present?
 
       source = Dradis::Plugins::CSV.mapping_source(headers: headers, entity: entity)
       mapping = Dradis::Plugins::CSV.get_mapping(source: source, destination: mapping_service.destination)
 
-      return unless mapping
+      return [nil, nil, nil] unless mapping
 
-      fields = mapping.mapping_fields.reject do |field|
-        [Mapping::IDENTIFIER_FIELD, Mapping::NODE_LABEL_FIELD].include?(field.destination_field)
+      reserved_field = entity == :issue ? Mapping::IDENTIFIER_FIELD : Mapping::NODE_LABEL_FIELD
+      reserved, fields = mapping.mapping_fields.partition { |field| field.destination_field == reserved_field }
+      reserved = reserved.first
+
+      reserved_index = reserved && headers.index do |header|
+        Dradis::Plugins::CSV.normalize_header(header) == reserved.source_field
       end
 
-      [source, fields]
+      [source, fields, reserved_index]
     end
 
     def build_text(mappings:, source:, fields:, row:)
