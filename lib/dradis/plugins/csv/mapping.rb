@@ -69,6 +69,12 @@ module Dradis::Plugins::CSV
     header.to_s.delete(" \t\r\n")
   end
 
+  # We're building a dynamic source here since we can't rely on a fixed set of
+  # sources unlike the other integrations.
+  def self.sample(source)
+    source_fields(source).index_with { |field| field }.to_json
+  end
+
   def self.source_fields(source)
     ::MappingField.
       joins(:mapping).
