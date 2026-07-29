@@ -19,12 +19,6 @@ module Dradis::Plugins::CSV
     {}
   end
 
-  # Signals that sources are created on upload and can't be defined upfront
-  # (e.g. so the Mappings Manager doesn't offer manual mapping creation).
-  def self.dynamic_mapping_sources?
-    true
-  end
-
   # Excludes the reserved identifier/node fields from the destination field
   # list: they carry row metadata, not entity content (see Importer#mapped_fields,
   # which excludes them the same way when building the import template).
