@@ -2,15 +2,12 @@ module Dradis::Plugins::CSV
   # Unlike other integrations, CSV files don't have a fixed structure, so the
   # list of sources can't be defined upfront. Instead, a new source is
   # registered every time a user maps a new CSV format (i.e. a new set of
-  # column headers) through the column mapper (see MappingForm).
-  #
-  # The empty constants keep the interface expected by
-  # Dradis::Plugins::Mappings::Base, while the class methods below override
-  # its constant-backed defaults with database-backed lookups.
+  # column headers) through the column mapper (see MappingForm). The class
+  # methods below give Dradis::Plugins::Mappings::Base's default,
+  # constant-backed implementations (mapping_sources, source_fields,
+  # default_mapping) database-backed overrides instead, so there's no
+  # DEFAULT_MAPPING/SOURCE_FIELDS constant here for them to fall back to.
   module Mapping
-    DEFAULT_MAPPING = {}.freeze
-    SOURCE_FIELDS = {}.freeze
-
     # Reserved destination fields that carry row metadata instead of entity
     # content. They're stored alongside the content fields but are excluded
     # from the entity text during import.
