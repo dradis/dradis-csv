@@ -70,6 +70,7 @@ module Dradis::Plugins::CSV
     ::MappingField.
       joins(:mapping).
       where(mappings: { component: component, source: source.to_s }).
+      where.not(source_field: 'Custom Text').
       distinct.
       pluck(:source_field)
   end
