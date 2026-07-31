@@ -7,17 +7,19 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
     described_class.new.perform(
       default_user_id: create(:user).id,
       file: file,
+      headers: CSV.open(file, &:readline),
       mappings: {},
       project_id: create(:project).id,
+      state: 'draft',
       uid: 1
     )
   end
 
   describe '#perform' do
-    it 'calls Importer#import_csv' do
+    it 'calls Importer#import_rows' do
       dbl = double('Importer')
       allow(Dradis::Plugins::CSV::Importer).to receive(:new).and_return(dbl)
-      expect(dbl).to receive(:import_csv).and_return(true)
+      expect(dbl).to receive(:import_rows).and_return(true)
 
       perform_job
     end

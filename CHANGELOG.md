@@ -1,3 +1,7 @@
+v5.3.0 (August 2026)
+  - Add support for managing Mappings through the Mappings Manager
+  - Add support for saving column assignments from the upload mapper
+
 v5.2.0 (June 2026)
   - No changes
 

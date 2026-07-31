@@ -129,6 +129,8 @@ describe 'upload feature', js: true do
 
             evidence = node.evidence.first
             expect(evidence.fields).to eq({ 'Label' => '10.0.0.1', 'Title' => 'SQL Injection', 'Location' => '10.0.0.1', 'Port' => '443' })
+
+            expect(Mapping.where(component: 'csv')).to be_empty
           end
         end
       end
@@ -235,6 +237,11 @@ describe 'upload feature', js: true do
 
               evidence = node.evidence.first
               expect(evidence.fields).to eq({ 'Label' => '10.0.0.1', 'Location' => '10.0.0.1', 'Title' => 'SQL Injection', 'Port' => '443' })
+
+              headers = CSV.open(file_path, &:readline)
+              issue_source = Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :issue)
+              evidence_source = Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :evidence)
+              expect(Mapping.where(component: 'csv').pluck(:source)).to match_array([issue_source, evidence_source])
             end
           end
         end
@@ -279,6 +286,65 @@ describe 'upload feature', js: true do
           end
         end
       end
+    end
+  end
+
+  context 'uploading a CSV file with a saved mapping' do
+    let(:file_path) { File.expand_path('../fixtures/files/simple.csv', __dir__) }
+
+    before do
+      rtp = create(
+        :report_template_properties,
+        evidence_fields: [{ name: 'Location', type: :string, default: true }],
+        issue_fields: [{ name: 'Title', type: :string, default: true }]
+      )
+      @project.update(report_template_properties: rtp)
+
+      headers = CSV.open(file_path, &:readline)
+      issue_mapping = Mapping.create!(
+        component: 'csv',
+        source: Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :issue),
+        destination: rtp.as_mapping_destination
+      )
+      issue_mapping.mapping_fields.create!(
+        source_field: 'Id', destination_field: 'plugin_id', content: '{{ csv[Id] }}'
+      )
+      issue_mapping.mapping_fields.create!(
+        source_field: 'Title', destination_field: 'Title', content: '{{ csv[Title] }}'
+      )
+
+      evidence_mapping = Mapping.create!(
+        component: 'csv',
+        source: Dradis::Plugins::CSV.mapping_source(headers: headers, entity: :evidence),
+        destination: rtp.as_mapping_destination
+      )
+      evidence_mapping.mapping_fields.create!(
+        source_field: 'Host', destination_field: 'node_label', content: '{{ csv[Host] }}'
+      )
+      evidence_mapping.mapping_fields.create!(
+        source_field: 'Location', destination_field: 'Location', content: '{{ csv[Location] }}'
+      )
+
+      page.refresh
+
+      find('#uploader + .combobox').click
+      find('#uploader ~ .combobox-menu .combobox-option', text: 'Dradis::Plugins::CSV').click
+    end
+
+    it 'imports immediately using the saved mapping, without showing the mapper' do
+      attach_file 'file', file_path, visible: false, disabled: false
+
+      expect(page).to have_text('CSV imported using its saved mapping', wait: 30)
+      expect(current_path).to eq(main_app.project_upload_manager_path(@project))
+
+      issue = Issue.last
+      expect(issue.fields).to include('Title' => 'SQL Injection', 'plugin' => 'csv', 'plugin_id' => '1')
+
+      node = issue.affected.first
+      expect(node.label).to eq('10.0.0.1')
+
+      evidence = node.evidence.first
+      expect(evidence.fields).to include('Location' => '10.0.0.1')
     end
   end
 

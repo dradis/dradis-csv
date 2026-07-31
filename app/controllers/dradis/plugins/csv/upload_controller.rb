@@ -3,21 +3,31 @@ module Dradis::Plugins::CSV
     include ProjectScoped
 
     before_action :load_attachment, only: [:new, :create]
-    before_action :load_rtp_fields, only: [:new]
+    before_action :load_rtp_fields, only: [:new, :create]
     before_action :load_csv_headers, only: [:new]
 
+    # Reached after the standard upload flow has already run the file
+    # through Importer#import. If a saved mapping matched, that import
+    # already happened (see importer.rb) and there's nothing left to map.
     def new
-      @default_columns = ['Column Header', 'Entity', 'Dradis Field']
+      if saved_mapping?
+        return redirect_to main_app.project_issues_path(current_project),
+          notice: 'CSV imported using its saved mapping.'
+      end
 
+      @default_columns = ['Column Header', 'Entity', 'Dradis Field']
       @log_uid = Log.new.uid
     end
 
     def create
+      save_mapping
+
       job_logger.write 'Enqueueing job to start in the background.'
 
       MappingImportJob.perform_later(
         default_user_id: current_user.id,
         file: @attachment.fullpath.to_s,
+        headers: csv_headers,
         mappings: mappings_params[:field_attributes].to_h,
         project_id: current_project.id,
         state: state,
@@ -29,6 +39,10 @@ module Dradis::Plugins::CSV
 
     def job_logger
       @job_logger ||= Log.new(uid: params[:log_uid].to_i)
+    end
+
+    def csv_headers
+      @csv_headers ||= ::CSV.open(@attachment.fullpath, &:readline)
     end
 
     def load_attachment
@@ -62,7 +76,29 @@ module Dradis::Plugins::CSV
     end
 
     def mappings_params
-      params.require(:mappings).permit(field_attributes: [:field, :type])
+      params.require(:mappings).permit(field_attributes: [:field, :type, :custom_field])
+    end
+
+    def rtp_destination
+      rtp = current_project.report_template_properties
+      rtp && rtp.as_mapping_destination
+    end
+
+    # Persist the submitted column assignments so future uploads of this CSV
+    # format can reuse them. Mappings are scoped to a report template, so
+    # projects without one keep the upload-time mapper only.
+    def save_mapping
+      return unless rtp_destination
+
+      MappingForm.new(
+        destination: rtp_destination,
+        headers: csv_headers,
+        rtp_fields: @rtp_fields
+      ).save(column_mappings: mappings_params[:field_attributes].to_h)
+    end
+
+    def saved_mapping?
+      rtp_destination && Dradis::Plugins::CSV.mapping_exists?(headers: @headers, destination: rtp_destination)
     end
 
     def state
