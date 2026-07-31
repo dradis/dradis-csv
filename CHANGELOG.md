@@ -1,6 +1,6 @@
-v5.3.0 (Month 2026)
-  - Save column assignments from the upload mapper as reusable Mappings
-  - Integrate with the Mappings Manager (edit/delete saved CSV mappings)
+v5.3.0 (August 2026)
+  - Add support for managing Mappings through the Mappings Manager
+  - Add support for saving column assignments from the upload mapper
 
 v5.2.0 (June 2026)
   - No changes
