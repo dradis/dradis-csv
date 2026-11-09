@@ -1,3 +1,7 @@
+[v#.#.#] ([month] [YYYY])
+  - Bugs fixes:
+    - Upload: show when a CSV upload fails instead of waiting for it forever
+
 v5.4.0 (September 2026)
   - No changes
 
