@@ -31,14 +31,14 @@ module Dradis::Plugins::CSV
         mappings: mappings_params[:field_attributes].to_h,
         project_id: current_project.id,
         state: state,
-        uid: params[:log_uid].to_i
+        uid: params[:log_uid]
       )
     end
 
     private
 
     def job_logger
-      @job_logger ||= Log.new(uid: params[:log_uid].to_i)
+      @job_logger ||= Log.new(uid: params[:log_uid])
     end
 
     def csv_headers
