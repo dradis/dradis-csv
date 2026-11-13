@@ -16,15 +16,16 @@ module Dradis::Plugins::CSV
     # file's headers, import immediately using it, so a recognized format
     # never needs re-mapping and gets the same treatment (Rules Engine
     # included) as any other plugin's upload. Unrecognized formats no-op
-    # here; UploadController sends the user to the mapper instead.
+    # here; UploadController sends the user to the mapper instead. Both no-op
+    # cases return nil, not false: false tells the upload the file was rejected.
     def import(params = {})
-      return false if mapping_service.destination.blank?
+      return if mapping_service.destination.blank?
 
       headers = CSV.open(params[:file], &:readline)
 
       unless Dradis::Plugins::CSV.mapping_exists?(headers: headers, destination: mapping_service.destination)
         logger.info { 'No saved mapping found for this CSV format.' }
-        return false
+        return
       end
 
       import_rows(file: params[:file], headers: headers)

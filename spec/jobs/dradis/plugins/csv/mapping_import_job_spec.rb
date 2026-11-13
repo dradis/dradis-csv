@@ -24,9 +24,20 @@ RSpec.describe Dradis::Plugins::CSV::MappingImportJob do
       perform_job
     end
 
-    it 'writes a known final line in the log' do
+    it 'writes the completed line' do
       perform_job
-      expect(Log.last.text).to eq 'Worker process completed.'
+      expect(Log.last.text).to eq Log::COMPLETED
+    end
+
+    it 'writes the error and the failed line, then re-raises, when the import raises' do
+      allow_any_instance_of(Dradis::Plugins::CSV::Importer).to receive(:import_rows).and_raise('Boom')
+
+      expect { perform_job }.to raise_error('Boom')
+
+      expect(Log.where(uid: 1).pluck(:text).last(2)).to eq [
+        'There was an error with the upload: Boom',
+        Log::FAILED
+      ]
     end
   end
 end

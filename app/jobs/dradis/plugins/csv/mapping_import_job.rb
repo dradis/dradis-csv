@@ -28,7 +28,12 @@ module Dradis::Plugins::CSV
       logger.write { 'Worker process starting background task.' }
       importer.import_rows(file: file, headers: headers, mappings: mappings)
 
-      logger.write { 'Worker process completed.' }
+      logger.complete!
+    rescue => exception
+      logger.write { "There was an error with the upload: #{exception.message}" }
+      logger.fail!
+      # No tracker here, so re-raise for Resque to mark it failed
+      raise
     end
   end
 end
