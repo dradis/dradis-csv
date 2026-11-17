@@ -6,7 +6,7 @@ window.addEventListener('job-done', function () {
       var state = document.getElementById('state').value;
       var path = window.location.pathname;
       var project_path = path.split('/').slice(0, -1).join('/');
-      var attachment = $('#attachment').val();
+      var attachment = $('[data-behavior~=attachment]').val();
 
       var params = new URLSearchParams({ attachment: attachment, state: state });
       var redirectPath =
