@@ -1,3 +1,7 @@
+[v#.#.#] ([month] [YYYY])
+  - Bugs fixes:
+    - Upload: open the column mapper for a CSV without a saved mapping, instead of reporting a failed upload
+
 v5.5.0 (November 2026)
   - No changes
 
