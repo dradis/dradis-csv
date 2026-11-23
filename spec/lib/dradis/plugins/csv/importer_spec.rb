@@ -141,8 +141,8 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
 
   describe '#import' do
     context 'when the project has no RTP' do
-      it 'does not import anything' do
-        expect(instance.import(file: file)).to eq(false)
+      it 'imports nothing and returns nil so the upload is not marked as failed' do
+        expect(instance.import(file: file)).to be_nil
         expect(Issue.count).to eq(0)
       end
     end
@@ -152,8 +152,8 @@ RSpec.describe Dradis::Plugins::CSV::Importer do
         project.update(report_template_properties: create(:report_template_properties))
       end
 
-      it 'does not import anything' do
-        expect(instance.import(file: file)).to eq(false)
+      it 'imports nothing and returns nil so the upload is not marked as failed' do
+        expect(instance.import(file: file)).to be_nil
         expect(Issue.count).to eq(0)
       end
     end
